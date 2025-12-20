@@ -1,0 +1,116 @@
+<resources>
+    <!-- Original Strings from Backup -->
+    <string name="app_name">银河OS工具箱</string>
+    <string name="media_monitor_service_name">媒体信息监听服务</string>
+    <string name="service_description">Keep Alive Service</string>
+    <string name="accessibility_service_label">银河OS工具箱服务</string>
+    <string name="activate_steering_wheel">激活方控功能</string>
+    <string name="app_credit">v%1$s by @geekz Powered by Gemini</string>
+    
+    <string name="auto_start_apps">行车自动启动应用</string>
+    <string name="return_to_home">启动后返回桌面</string>
+    <string name="auto_start_settings_not_found">未找到自启动设置，正在打开设置。</string>
+    <string name="failed_open_auto_start">无法打开自启动设置，正在打开设置。</string>
+    
+    <string name="auto_switch_theme">自动切换高德日夜主题</string>
+    <string name="auto_theme_sync_disabled">自动日夜主题同步已禁用</string>
+    <string name="auto_theme_sync_enabled">自动日夜主题同步已启用</string>
+    
+    <string name="boot_event_detected">OneOSTool 检测到开机/电源事件</string>
+    <string name="launching_app">正在启动: %1$s</string>
+    <string name="launch_delay">启动延迟</string>
+    
+    <string name="debug_mode">调试模式</string>
+    <string name="debug_mode_disabled">调试模式已禁用</string>
+    <string name="debug_mode_enabled">调试模式已启用</string>
+    
+    <string name="enable_accessibility_toast">"请在辅助功能设置中开启 'OneOSTool'"</string>
+    <string name="fix_permission">修复</string>
+    
+    <string name="force_auto_day_night">开启车机自动日夜主题</string>
+    <string name="force_auto_mode">强制车机自动日夜主题</string>
+    <string name="force_dark">切换高德暗色</string>
+    <string name="force_light">切换高德亮色</string>
+    
+    <string name="key_next_track">下一曲 (87)</string>
+    <string name="key_play_pause">播放/暂停 (85)</string>
+    <string name="key_prev_track">上一曲 (88)</string>
+    <string name="key_unknown">未知</string>
+    <string name="media_key_service_title">媒体按键监听服务</string>
+    <string name="media_next">下一曲</string>
+    <string name="media_play_pause">播放/暂停</string>
+    <string name="media_prev">上一曲</string>
+    <string name="simulated_media_key">模拟媒体按键: %1$s</string>
+    
+    <string name="start_steering_wheel">启用方控</string>
+    <string name="steering_wheel_control">方控按键接管</string>
+    <string name="steering_wheel_disabled">方控功能已禁用</string>
+    <string name="steering_wheel_enabled">方控功能已启用</string>
+    
+    <string name="override_brightness_title">车机亮度锁定</string>
+    <string name="override_brightness">强制亮度控制</string>
+    <string name="override_brightness_avm">AVM 亮度锁定</string>
+    <string name="override_brightness_day">白天亮度锁定</string>
+    <string name="override_brightness_night">夜间亮度锁定</string>
+    
+    <string name="perm_auto_start">自启动权限</string>
+    <string name="perm_battery">忽略电池优化</string>
+    <string name="perm_overlay">显示在其他应用上层</string>
+    <string name="perm_storage">存储权限</string>
+    <string name="perm_accessibility">无障碍服务</string>
+    <string name="status_granted">已授权</string>
+    <string name="status_denied">未授权 (点击授予)</string>
+    
+    <string name="sensor_title">数据监测</string>
+    <string name="sensor_day_night">光线感应</string>
+    <string name="sensor_speed_status">车速</string>
+    <string name="scan_vehicle_constants">扫描常量(信号/转向)</string>
+    <string name="sensor_value_format">%1$s: %2$s</string>
+    
+    <string name="prop_avm">AVM 状态</string>
+    <string name="prop_brightness_day">白天亮度</string>
+    <string name="prop_brightness_night">夜间亮度</string>
+    <string name="prop_day_night_theme">主题模式</string>
+    
+    <string name="status_auto_day_night">自动日夜主题</string>
+    <string name="status_auto_mode">当前车机主题：%1$s</string>
+    <string name="vehicle_theme_settings">车机主题模式设置</string>
+    
+    <string name="theme_mode_auto">自动 (光线感应)</string>
+    <string name="theme_mode_auto_sunset">自动 (日出日落)</string>
+    <string name="theme_mode_day">浅色</string>
+    <string name="theme_mode_night">深色</string>
+    <string name="mode_auto">自动(光线感应)</string>
+    <string name="mode_custom">自定义</string>
+    <string name="mode_day">浅色</string>
+    <string name="mode_night">深色</string>
+    <string name="mode_sunrise_sunset">自动(日出日落)</string>
+    <string name="mode_unknown">未知</string>
+    <string name="value_unknown">未知</string>
+    
+    <string name="sent_autonavi_broadcast">已发送高德广播: 模式 %1$d</string>
+    
+    <string name="wechat_button_function">微信按键功能</string>
+    <string name="wechat_func_title">微信键自定义</string>
+    <string name="wechat_long_press">长按功能</string>
+    <string name="wechat_short_press">短按功能</string>
+
+    <!-- Test AVM Linkage -->
+    <string name="test_turn_left">模拟左转向</string>
+    <string name="test_turn_right">模拟右转向</string>
+    <string name="test_force_avm">强制开启 360</string>
+    
+    <!-- New Strings (Not in backup, added for Refactoring/New Features) -->
+    <string name="prop_turn_signal">转向灯状态</string>
+    <string name="turn_left">左转向</string>
+    <string name="turn_right">右转向</string>
+    <string name="turn_none">关闭</string>
+    <string name="turn_hazard">双闪警示</string>
+    
+    <string name="prop_media_info">媒体信息</string>
+    <string name="btn_fix">修复</string>
+    <string name="perm_desc_accessibility">需要此权限以实现后台保活和方控功能</string>
+    <string name="perm_notification">通知监听权限</string>
+    <string name="perm_desc_notification">需要此权限以读取正在播放的歌曲信息</string>
+
+</resources>
