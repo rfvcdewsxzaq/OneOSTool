@@ -2,7 +2,7 @@
 
 针对吉利星越L车型（2021-2023款）开发的银河OS功能增强工具，完全使用Antigravity （Gemini 3.0）生成代码。
 
-/*![OneOSTool](https://github.com/rfvcdewsxzaq/OneOSTool/blob/main/assets/main.png)*/
+![OneOSTool](https://github.com/rfvcdewsxzaq/OneOSTool/blob/main/assets/main.png)
 
 
 ## 主要功能
