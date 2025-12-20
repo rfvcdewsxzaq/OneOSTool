@@ -2,7 +2,7 @@
 
 针对吉利星越L车型（2021-2023款）开发的银河OS功能增强工具，完全使用Antigravity （Gemini 3.0）生成代码。
 
-/*![NaviTool](https://github.com/user-attachments/assets/515f9cdf-f55e-4948-bce8-19bd29eaa5512)*/
+/*![OneOSTool](https://github.com/user-attachments/assets/515f9cdf-f55e-4948-bce8-19bd29eaa5512)*/
 
 
 ## 主要功能
@@ -37,9 +37,9 @@
    *注意：出于安全考虑ecarx.jar和ecarx.adaptapi.jar不随源码提供请自行从车机提取*
 ---
 
-## 特别感谢
+## 特别感谢作者mwy1992的项目源码
 
-感谢作者mwy1992的项目源码：
+作者：
 - [@mwy1992](https://github.com/mwy1992)
   
 源项目地址：
