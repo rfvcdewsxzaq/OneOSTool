@@ -232,6 +232,43 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Smart AVM Toggle
+        SwitchMaterial switchSmartAvm = findViewById(R.id.switchSmartAvm);
+        boolean isSmartAvmEnabled = prefs.getBoolean("enable_smart_avm", false);
+        switchSmartAvm.setChecked(isSmartAvmEnabled);
+
+        // Initial config send (in case service restarts)
+        Intent avmIntent = new Intent("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG");
+        avmIntent.putExtra("enabled", isSmartAvmEnabled);
+        sendBroadcast(avmIntent);
+
+        switchSmartAvm.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("enable_smart_avm", isChecked).apply();
+            Intent intent = new Intent("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG");
+            intent.putExtra("enabled", isChecked);
+            sendBroadcast(intent);
+            if (isChecked) {
+                DebugLogger.toast(this, "智能360辅助已启用");
+            }
+        });
+
+        // Media Notification Toggle
+        SwitchMaterial switchMediaNotification = findViewById(R.id.switchMediaNotification);
+        boolean isMediaNotificationEnabled = prefs.getBoolean("enable_media_notification", true);
+        switchMediaNotification.setChecked(isMediaNotificationEnabled);
+
+        // Initial config send
+        Intent mediaIntent = new Intent("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG");
+        mediaIntent.putExtra("enabled", isMediaNotificationEnabled);
+        sendBroadcast(mediaIntent);
+
+        switchMediaNotification.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("enable_media_notification", isChecked).apply();
+            Intent intent = new Intent("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG");
+            intent.putExtra("enabled", isChecked);
+            sendBroadcast(intent);
+        });
+
         // Set initial text to avoid showing placeholder
         if (tvAutoModeStatus != null) {
             tvAutoModeStatus.setText(getString(R.string.status_auto_mode, getString(R.string.mode_unknown)));

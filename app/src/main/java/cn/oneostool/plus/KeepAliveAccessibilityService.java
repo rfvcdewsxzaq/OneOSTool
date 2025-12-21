@@ -37,17 +37,22 @@ import android.media.session.PlaybackState;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.text.TextUtils; // Added for TextUtils
 
 public class KeepAliveAccessibilityService extends AccessibilityService {
 
     private static final String TAG = "KeepAliveService";
     private static final String AUTONAVI_PKG = "com.autonavi.amapauto";
 
-    // MediaSession related
+    // Media Session
     private MediaSession mMediaSession;
     private NotificationManager mNotificationManager;
+    private NotificationChannel mNotificationChannel; // Added
     private static final String CHANNEL_ID = "media_channel";
-    private static final int NOTIFICATION_ID = 888;
+    private static final int NOTIFICATION_ID = 1001;
+    private MediaMetadata.Builder mMetadataBuilder; // Added
+    private boolean mIsMediaNotificationEnabled = true; // Added
+    private com.geely.lib.oneosapi.mediacenter.bean.MediaData mCurrentMediaData; // Added field
 
     private ICarFunction iCarFunction;
     private ISensor iSensor;
@@ -102,6 +107,18 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         // Start enforcement loop
         mOverrideHandler.post(mOverrideRunnable);
 
+        // Restore last media data (Optimistic restoration)
+        String lastTitle = prefs.getString("last_media_title", null);
+        if (lastTitle != null) {
+            com.geely.lib.oneosapi.mediacenter.bean.MediaData restorationData = new com.geely.lib.oneosapi.mediacenter.bean.MediaData();
+            restorationData.name = lastTitle;
+            restorationData.artist = prefs.getString("last_media_artist", "");
+            restorationData.albumName = prefs.getString("last_media_album", "");
+            mCurrentMediaData = restorationData;
+            // Update Session immediately so HUD shows something
+            updateMediaSession(restorationData);
+        }
+
         // Always start monitoring for Data Monitor feature
         startMonitoring();
 
@@ -121,6 +138,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         filter.addAction("cn.oneostool.plus.ACTION_SET_BRIGHTNESS");
         filter.addAction("cn.oneostool.plus.ACTION_SET_BRIGHTNESS_OVERRIDE_CONFIG");
         filter.addAction("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
+        filter.addAction("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG");
+        filter.addAction("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG");
         filter.addAction(Intent.ACTION_MEDIA_BUTTON);
         ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
@@ -278,6 +297,61 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private int mLastThemeMode = -1; // Added for Theme Mode persistence
     private int mLastTurnSignalLeft = 0;
     private int mLastTurnSignalRight = 0;
+
+    // Smart AVM State
+    private boolean mIsSmartAvmEnabled = false;
+    private boolean mHasSpeedExceeded30 = false;
+    private boolean mIsSmartAvmActive = false;
+
+    private void checkSmartAvmTrigger(float currentSpeed) {
+        if (!mIsSmartAvmEnabled || iCarFunction == null)
+            return;
+
+        boolean isTurnSignalOn = (mLastTurnSignalLeft == 1 || mLastTurnSignalRight == 1);
+
+        // Logic Step 1: Monitor Speed during Turn
+        if (isTurnSignalOn) {
+            if (currentSpeed > 30) {
+                mHasSpeedExceeded30 = true;
+                // Refinement: If speed > 30 and we were active, reset active flag (System
+                // likely closed it)
+                // Flow effectively resets to "Waiting for trigger"
+                if (mIsSmartAvmActive) {
+                    Log.i(TAG, "SmartAVM: Speed > 30, resetting active flag (System takes over)");
+                    mIsSmartAvmActive = false;
+                }
+            } else {
+                // Speed <= 30
+                // Logic Step 2: Trigger Condition
+                if (mHasSpeedExceeded30 && !mIsSmartAvmActive) {
+                    // Check if AVM is already on to avoid spamming
+                    if (mLastAvmValue != 1) {
+                        Log.i(TAG, "SmartAVM: Triggering AVM (Speed dropped < 30 after > 30)");
+                        try {
+                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                            mIsSmartAvmActive = true;
+                            DebugLogger.toast(this, "智能360已自动开启");
+                        } catch (Exception e) {
+                            Log.e(TAG, "SmartAVM: Failed to open AVM", e);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Logic Step 3: Turn Signal Off - Reset
+            if (mIsSmartAvmActive) {
+                Log.i(TAG, "SmartAVM: Turn signal OFF, closing AVM");
+                try {
+                    iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 0);
+                } catch (Exception e) {
+                    Log.e(TAG, "SmartAVM: Failed to close AVM", e);
+                }
+            }
+            // Reset Flags
+            mHasSpeedExceeded30 = false;
+            mIsSmartAvmActive = false;
+        }
+    }
 
     private void pollAndBroadcastBrightness() {
         if (iCarFunction == null)
@@ -573,6 +647,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             float speedVal = value * 3.72f;
                             broadcastSensorValues(mLastDayNightSensorValue, speedVal, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            checkSmartAvmTrigger(speedVal);
                         }
                     }
 
@@ -590,6 +665,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             float speedVal = value * 3.72f;
                             broadcastSensorValues(mLastDayNightSensorValue, speedVal, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            checkSmartAvmTrigger(speedVal);
                         }
                         // SENSOR_TYPE_DAY_NIGHT removed - using active polling instead
                     }
@@ -635,11 +711,13 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             mLastTurnSignalLeft = value;
                             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            checkSmartAvmTrigger(mLastSpeedSensorValue);
                         } else if (functionId == FUNC_TURN_SIGNAL_RIGHT) {
                             Log.d(TAG, "Right Turn Signal Changed: " + value);
                             mLastTurnSignalRight = value;
                             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            checkSmartAvmTrigger(mLastSpeedSensorValue);
                         }
                     }
 
@@ -738,8 +816,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                                 mLastBrightnessNightValue = value;
                             }
                             // Broadcast new state immediately to keep UI in sync
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
-                                    mLastAvmValue, mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
+                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
                         }
 
                         // Also force a check from system
@@ -754,15 +832,30 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 mTargetBrightnessDay = intent.getIntExtra("day", 5);
                 mTargetBrightnessNight = intent.getIntExtra("night", 3);
                 mTargetBrightnessAvm = intent.getIntExtra("avm", 15);
-                Log.d(TAG, "Override Config Updated: " + mIsOverrideEnabled +
-                        " D:" + mTargetBrightnessDay + " N:" + mTargetBrightnessNight + " A:" + mTargetBrightnessAvm);
+                Log.d(TAG, "Override Config Updated: " + mIsOverrideEnabled + " D:" + mTargetBrightnessDay + " N:"
+                        + mTargetBrightnessNight + " A:" + mTargetBrightnessAvm);
+            } else if ("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG".equals(action)) {
+                mIsSmartAvmEnabled = intent.getBooleanExtra("enabled", false);
+                Log.i(TAG, "Smart AVM Config Updated: " + mIsSmartAvmEnabled);
+                // Reset state on toggle
+                if (!mIsSmartAvmEnabled) {
+                    mHasSpeedExceeded30 = false;
+                    mIsSmartAvmActive = false;
+                }
+            } else if ("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG".equals(action)) {
+                mIsMediaNotificationEnabled = intent.getBooleanExtra("enabled", true);
+                Log.i(TAG, "Media Notification Config Updated: " + mIsMediaNotificationEnabled);
+                if (!mIsMediaNotificationEnabled) {
+                    // Cancel notification immediately if disabled
+                    updateMediaSession(); // Will handle cancellation logic
+                } else {
+                    // Re-post if enabled
+                    updateMediaSession();
+                }
             } else if (Intent.ACTION_MEDIA_BUTTON.equals(action)) {
                 android.view.KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
                 if (event != null && event.getAction() == android.view.KeyEvent.ACTION_UP) {
                     Log.i(TAG, "Standard MEDIA_BUTTON received: " + event.getKeyCode());
-                    if (DebugLogger.isDebugEnabled(context)) {
-                        DebugLogger.toast(context, "Standard Media: " + event.getKeyCode());
-                    }
                 }
             } else if ("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL".equals(action)) {
                 String type = intent.getStringExtra("type");
@@ -966,7 +1059,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 if (mOneOSServiceManager != null) {
                     Log.i(TAG, "IServiceManager obtained successfully");
                     DebugLogger.toast(KeepAliveAccessibilityService.this,
-                            "IServiceManager 获取成功:" + mOneOSServiceManager);
+                            "IServiceManager 获取成功");
                     mRetryCount = 0;
                     mMediaRetryCount = 0;
                     mOneOSInputManager = null; // Reset
@@ -1001,6 +1094,16 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         Intent intent = new Intent("cn.oneostool.plus.ACTION_ONEOS_STATUS");
         intent.putExtra("is_connected", isConnected);
         sendBroadcast(intent);
+
+        // Sync UI with current media data
+        if (mCurrentMediaData != null) {
+            Intent mediaIntent = new Intent("cn.oneostool.plus.ACTION_MEDIA_METADATA");
+            mediaIntent.putExtra("title", mCurrentMediaData.name);
+            mediaIntent.putExtra("artist", mCurrentMediaData.artist);
+            mediaIntent.putExtra("album", mCurrentMediaData.albumName);
+            // Don't send has_art here to avoid complexity, main aim receives text info
+            sendBroadcast(mediaIntent);
+        }
     }
 
     private void tryGetInputManager() {
@@ -1013,14 +1116,14 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             // Type 8 for InputManager (based on mediacenter analysis)
             Log.i(TAG, "Calling getService(8) for InputManager...");
             IBinder inputBinder = mOneOSServiceManager.getService(8);
-            IBinder inputBinde = mOneOSServiceManager.getService(8);
             Log.i(TAG, "getService(8) returned: " + inputBinder);
-            DebugLogger.toast(KeepAliveAccessibilityService.this, "getService(8) returned: " + inputBinder);
+            // DebugLogger.toast(KeepAliveAccessibilityService.this, "getService(8)
+            // returned: " + inputBinder);
 
             if (inputBinder != null) {
                 mOneOSInputManager = com.geely.lib.oneosapi.input.IInputManager.Stub.asInterface(inputBinder);
                 Log.i(TAG, "IInputManager obtained: " + mOneOSInputManager);
-                DebugLogger.toast(KeepAliveAccessibilityService.this, "IInputManager 获取成功: " + mOneOSInputManager);
+                DebugLogger.toast(KeepAliveAccessibilityService.this, "IInputManager 获取成功");
 
                 try {
                     int controllerId = mOneOSInputManager.getControlIndex();
@@ -1112,10 +1215,12 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             // 只处理媒体按键，微信按键由 onShortClick/onLongPressTriggered 处理
                             // 关键逻辑修改：不再依赖参数 keyController (始终为0)，而是依赖 getControlIndex() (返回2)
                             // 如果全局 Index 为 2，说明处于媒体控制模式，此时处理按键是安全的
-                            if (DebugLogger.isDebugEnabled(KeepAliveAccessibilityService.this)) {
-                                DebugLogger.toast(KeepAliveAccessibilityService.this,
-                                        "Key: " + keyCode + " Index: " + currentIndex);
-                            }
+                            /*
+                             * if (DebugLogger.isDebugEnabled(KeepAliveAccessibilityService.this)) {
+                             * DebugLogger.toast(KeepAliveAccessibilityService.this,
+                             * "Key: " + keyCode + " Index: " + currentIndex);
+                             * }
+                             */
                             if (currentIndex == 2) {
                                 if (keyCode == 200087 || keyCode == 200088 || keyCode == 200085) {
                                     handleShortClick(keyCode);
@@ -1243,7 +1348,17 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                     public void onMediaDataChanged(int source, com.geely.lib.oneosapi.mediacenter.bean.MediaData data)
                             throws RemoteException {
                         Log.i(TAG, "onMediaDataChanged source=" + source + " data=" + data);
+                        // Explicit Debug Log for User
+                        Log.e("MEDIA_DEBUG", ">>> NOTIFICATION RECEIVED: Source=" + source +
+                                " Title=" + (data != null ? data.name : "null") +
+                                " Artist=" + (data != null ? data.artist : "null") +
+                                " Album=" + (data != null ? data.albumName : "null") +
+                                " MediaType=" + (data != null ? data.mediaType : -1));
+
                         if (data != null) {
+                            // Update Current Source
+                            mCurrentSource = source;
+
                             // Try to load bitmap from URI if it's missing
                             if (data.albumCover == null && data.albumCoverUri != null
                                     && !data.albumCoverUri.isEmpty()) {
@@ -1279,123 +1394,62 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             intent.putExtra("has_art", hasArt);
                             sendBroadcast(intent);
 
+                            // Save to SharedPreferences for restoration on restart
+                            final String fTitle = data.name;
+                            final String fArtist = data.artist;
+                            final String fAlbum = data.albumName;
+                            mOverrideHandler.post(() -> {
+                                SharedPreferences p = getSharedPreferences("navitool_prefs", MODE_PRIVATE);
+                                p.edit().putString("last_media_title", fTitle)
+                                        .putString("last_media_artist", fArtist)
+                                        .putString("last_media_album", fAlbum)
+                                        .apply();
+                            });
+
                             // Update system MediaSession and post notification
+                            mCurrentMediaData = data; // Update local field
                             updateMediaSession(data);
-                        }
-                    }
-
-                    @android.annotation.SuppressLint("MissingPermission")
-                    private void updateMediaSession(MediaData data) {
-                        if (mMediaSession == null)
-                            return;
-                        if (data == null)
-                            return;
-                        // Ignore updates with missing title (likely just status/progress updates that
-                        // cleared metadata)
-                        if (android.text.TextUtils.isEmpty(data.name)) {
-                            Log.w(TAG, "Ignoring MediaData update with empty title");
-                            return;
-                        }
-
-                        try {
-                            // 1. Update Metadata
-                            android.media.MediaMetadata.Builder metadataBuilder = new android.media.MediaMetadata.Builder();
-                            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_TITLE, data.name);
-                            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, data.artist);
-                            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_ALBUM, data.albumName);
-                            if (data.albumCover != null) {
-                                metadataBuilder.putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART,
-                                        data.albumCover);
-                            }
-                            metadataBuilder.putLong(android.media.MediaMetadata.METADATA_KEY_DURATION, data.duration);
-                            mMediaSession.setMetadata(metadataBuilder.build());
-
-                            // 2. Update PlaybackState
-                            android.media.session.PlaybackState.Builder stateBuilder = new android.media.session.PlaybackState.Builder();
-                            stateBuilder.setActions(android.media.session.PlaybackState.ACTION_PLAY
-                                    | android.media.session.PlaybackState.ACTION_PAUSE
-                                    | android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT
-                                    | android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS);
-                            // Assuming playing state since we received data, ideally should track
-                            // play/pause state
-                            stateBuilder.setState(android.media.session.PlaybackState.STATE_PLAYING, 0, 1.0f);
-                            mMediaSession.setPlaybackState(stateBuilder.build());
-
-                            // 3. Post Notification
-                            android.app.Notification.Builder builder = new android.app.Notification.Builder(
-                                    KeepAliveAccessibilityService.this, CHANNEL_ID)
-                                    .setStyle(new android.app.Notification.MediaStyle()
-                                            .setMediaSession(mMediaSession.getSessionToken()))
-                                    .setSmallIcon(android.R.drawable.ic_media_play) // Use system icon or app icon
-                                    .setVisibility(android.app.Notification.VISIBILITY_PUBLIC)
-                                    .setContentTitle(data.name)
-                                    .setContentText(data.artist)
-                                    .setOngoing(true);
-
-                            // Add dummy actions to satisfy MediaStyle look
-                            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_previous,
-                                    "Previous", null));
-                            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_pause,
-                                    "Pause", null));
-                            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_next,
-                                    "Next", null));
-
-                            if (data.albumCover != null) {
-                                builder.setLargeIcon(data.albumCover);
-                            }
-
-                            mNotificationManager.notify(NOTIFICATION_ID, builder.build());
-
-                        } catch (Exception e) {
-                            Log.e(TAG, "Failed to update MediaSession", e);
-                        }
-                    }
-
-                    private android.graphics.Bitmap loadBitmapFromUri(String uriString) {
-                        if (android.text.TextUtils.isEmpty(uriString))
-                            return null;
-                        try {
-                            android.net.Uri uri = android.net.Uri.parse(uriString);
-                            String scheme = uri.getScheme();
-                            if ("http".equals(scheme) || "https".equals(scheme)) {
-                                // Network loading
-                                java.net.URL url = new java.net.URL(uriString);
-                                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url
-                                        .openConnection();
-                                connection.setDoInput(true);
-                                connection.connect();
-                                try (java.io.InputStream input = connection.getInputStream()) {
-                                    return android.graphics.BitmapFactory.decodeStream(input);
-                                }
-                            } else if ("content".equals(scheme) || "android.resource".equals(scheme)) {
-                                // ContentResolver loading
-                                try (java.io.InputStream is = getContentResolver().openInputStream(uri)) {
-                                    return android.graphics.BitmapFactory.decodeStream(is);
-                                }
-                            } else if ("file".equals(scheme)) {
-                                // File URI loading
-                                return android.graphics.BitmapFactory.decodeFile(uri.getPath());
-                            } else {
-                                // Assume absolute path
-                                return android.graphics.BitmapFactory.decodeFile(uriString);
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error loading bitmap from URI: " + uriString, e);
-                            return null;
                         }
                     }
 
                     @Override
                     public void onPlayPositionChanged(int source, long current, long total) throws RemoteException {
+                        // Source Filtering: Ignore position updates from inactive sources
+                        if (mCurrentSource != -1 && source != mCurrentSource) {
+                            return;
+                        }
+
                         Intent intent = new Intent("cn.oneostool.plus.ACTION_MEDIA_POSITION");
                         intent.putExtra("current", current);
                         intent.putExtra("total", total);
                         sendBroadcast(intent);
+
+                        // Update MediaSession position
+                        updateMediaSessionPosition(current);
                     }
 
                     @Override
                     public void onPlayStateChanged(int source, int state) throws RemoteException {
                         Log.d(TAG, "onPlayStateChanged source=" + source + " state=" + state);
+                        // Explicit Debug Log for User
+                        Log.e("MEDIA_DEBUG", ">>> STATE CHANGE: Source=" + source + " State=" + state +
+                                " (ActiveSource=" + mCurrentSource + ")");
+
+                        // DEBUG: Toast on Main Thread
+                        mOverrideHandler.post(() -> {
+                            DebugLogger.toast(KeepAliveAccessibilityService.this,
+                                    "PlayState: Src=" + source + " State=" + state);
+                        });
+
+                        // Source Filtering for State
+                        // Strictly ignore state changes from non-active sources
+                        // We rely on onMediaDataChanged to switch the active source (mCurrentSource)
+                        if (mCurrentSource != -1 && source != mCurrentSource) {
+                            Log.d("MEDIA_DEBUG", "IGNORING state change from non-active source: " + source);
+                            return;
+                        }
+
+                        updateMediaSessionState(state);
                     }
 
                     @Override
@@ -1432,6 +1486,234 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         } catch (Exception e) {
             Log.e(TAG, "Failed to register music listener", e);
             DebugLogger.toast(this, "注册媒体监听失败: " + e.getMessage());
+        }
+    }
+
+    private long mLastPosition = 0;
+    private int mLastPlaybackState = android.media.session.PlaybackState.STATE_NONE;
+    private int mCurrentSource = -1; // Track the active audio source
+
+    private void updateMediaSessionPosition(long position) {
+        if (mMediaSession == null)
+            return;
+
+        // Save position
+        mLastPosition = position;
+
+        // If state is unknown, assume playing if getting position updates
+        if (mLastPlaybackState == android.media.session.PlaybackState.STATE_NONE) {
+            mLastPlaybackState = android.media.session.PlaybackState.STATE_PLAYING;
+        }
+
+        try {
+            android.media.session.PlaybackState.Builder stateBuilder = new android.media.session.PlaybackState.Builder();
+            stateBuilder.setActions(android.media.session.PlaybackState.ACTION_PLAY
+                    | android.media.session.PlaybackState.ACTION_PAUSE
+                    | android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT
+                    | android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS);
+
+            // Use current state and saved position
+            stateBuilder.setState(mLastPlaybackState, mLastPosition,
+                    mLastPlaybackState == android.media.session.PlaybackState.STATE_PLAYING ? 1.0f : 0f);
+
+            mMediaSession.setPlaybackState(stateBuilder.build());
+
+            // Ensure session is active if playing
+            if (mLastPlaybackState == android.media.session.PlaybackState.STATE_PLAYING && !mMediaSession.isActive()) {
+                mMediaSession.setActive(true);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to update MediaSession position", e);
+        }
+    }
+
+    private android.os.Handler mStateDebounceHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable mStateDebounceRunnable;
+
+    private void updateMediaSessionState(int oneOsState) {
+        // Debounce Logic
+        // 0 = PLAYING, 1 = PAUSED
+        if (oneOsState == 0) {
+            // If Playing, apply IMMEDIATELY and cancel any pending "Pause"
+            if (mStateDebounceRunnable != null) {
+                mStateDebounceHandler.removeCallbacks(mStateDebounceRunnable);
+            }
+            executeMediaSessionStateUpdate(0);
+        } else {
+            // If Paused (1 or other), delay it to see if it's just a transition
+            if (mStateDebounceRunnable != null) {
+                mStateDebounceHandler.removeCallbacks(mStateDebounceRunnable);
+            }
+            mStateDebounceRunnable = () -> {
+                executeMediaSessionStateUpdate(oneOsState);
+            };
+            // 1000ms debounce time
+            mStateDebounceHandler.postDelayed(mStateDebounceRunnable, 1000);
+        }
+    }
+
+    private void executeMediaSessionStateUpdate(int oneOsState) {
+        if (mMediaSession == null)
+            return;
+
+        try {
+            android.media.session.PlaybackState.Builder stateBuilder = new android.media.session.PlaybackState.Builder();
+            stateBuilder.setActions(android.media.session.PlaybackState.ACTION_PLAY
+                    | android.media.session.PlaybackState.ACTION_PAUSE
+                    | android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT
+                    | android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS);
+
+            int state = android.media.session.PlaybackState.STATE_NONE;
+            // OneOS states: 0=PLAYING, 1=PAUSED/STOPPED
+            // User confirmed: 0=Play, 1=Pause, No other states.
+
+            boolean isPlaying = false;
+
+            switch (oneOsState) {
+                case 0: // playing
+                    state = android.media.session.PlaybackState.STATE_PLAYING;
+                    isPlaying = true;
+                    break;
+                case 1: // paused/stopped
+                    state = android.media.session.PlaybackState.STATE_PAUSED;
+                    break;
+                default:
+                    state = android.media.session.PlaybackState.STATE_PAUSED; // Fallback
+                    break;
+            }
+
+            // Save state
+            mLastPlaybackState = state;
+
+            // Use new state and LAST KNOWN position
+            stateBuilder.setState(state, mLastPosition, isPlaying ? 1.0f : 0f);
+
+            mMediaSession.setPlaybackState(stateBuilder.build());
+
+            // Always force active if we have data, to prevent disappearing info
+            mMediaSession.setActive(true);
+
+            if (!isPlaying) {
+                // Do NOT cancel notification on stop/pause to ensure persistence
+                // Re-posting notification to update icon to "Play" (since we are paused) logic
+                // is handled by MediaStyle usually
+                // For now, getting the HUD to persist is priority #1.
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to update MediaSession state", e);
+        }
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private void updateMediaSession() {
+        updateMediaSession(mCurrentMediaData);
+    }
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private void updateMediaSession(com.geely.lib.oneosapi.mediacenter.bean.MediaData data) {
+        if (mMediaSession == null)
+            return;
+
+        // Media Notification Check
+        if (!mIsMediaNotificationEnabled) {
+            if (mNotificationManager != null) {
+                mNotificationManager.cancel(NOTIFICATION_ID);
+            }
+            if (mMediaSession.isActive()) {
+                mMediaSession.setActive(false);
+            }
+            return;
+        }
+
+        if (data == null)
+            return;
+        // Ignore updates with missing title
+        if (android.text.TextUtils.isEmpty(data.name)) {
+            Log.w(TAG, "Ignoring MediaData update with empty title");
+            return;
+        }
+
+        try {
+            // Force session active when we receive valid metadata
+            if (!mMediaSession.isActive()) {
+                mMediaSession.setActive(true);
+            }
+
+            // 1. Update Metadata
+            android.media.MediaMetadata.Builder metadataBuilder = new android.media.MediaMetadata.Builder();
+            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_TITLE, data.name);
+            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, data.artist);
+            metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_ALBUM, data.albumName);
+            if (data.albumCover != null) {
+                metadataBuilder.putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART,
+                        data.albumCover);
+            }
+            metadataBuilder.putLong(android.media.MediaMetadata.METADATA_KEY_DURATION, data.duration);
+            mMediaSession.setMetadata(metadataBuilder.build());
+
+            // 3. Post Notification
+            android.app.Notification.Builder builder = new android.app.Notification.Builder(
+                    KeepAliveAccessibilityService.this, CHANNEL_ID)
+                    .setStyle(new android.app.Notification.MediaStyle()
+                            .setMediaSession(mMediaSession.getSessionToken()))
+                    .setSmallIcon(android.R.drawable.ic_media_play) // Use system icon or app icon
+                    .setVisibility(android.app.Notification.VISIBILITY_PUBLIC)
+                    .setContentTitle(data.name)
+                    .setContentText(data.artist)
+                    .setOngoing(true);
+
+            // Add dummy actions to satisfy MediaStyle look
+            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_previous,
+                    "Previous", null));
+            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_pause,
+                    "Pause", null));
+            builder.addAction(new android.app.Notification.Action(android.R.drawable.ic_media_next,
+                    "Next", null));
+
+            if (data.albumCover != null) {
+                builder.setLargeIcon(data.albumCover);
+            }
+
+            Log.e("MEDIA_DEBUG", ">>> POSTING SYSTEM NOTIFICATION: Title=" + data.name);
+            mNotificationManager.notify(NOTIFICATION_ID, builder.build());
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to update MediaSession", e);
+        }
+    }
+
+    private android.graphics.Bitmap loadBitmapFromUri(String uriString) {
+        if (android.text.TextUtils.isEmpty(uriString))
+            return null;
+        try {
+            android.net.Uri uri = android.net.Uri.parse(uriString);
+            String scheme = uri.getScheme();
+            if ("http".equals(scheme) || "https".equals(scheme)) {
+                // Network loading
+                java.net.URL url = new java.net.URL(uriString);
+                java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url
+                        .openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                try (java.io.InputStream input = connection.getInputStream()) {
+                    return android.graphics.BitmapFactory.decodeStream(input);
+                }
+            } else if ("content".equals(scheme) || "android.resource".equals(scheme)) {
+                // ContentResolver loading
+                try (java.io.InputStream is = getContentResolver().openInputStream(uri)) {
+                    return android.graphics.BitmapFactory.decodeStream(is);
+                }
+            } else if ("file".equals(scheme)) {
+                // File URI loading
+                return android.graphics.BitmapFactory.decodeFile(uri.getPath());
+            } else {
+                // Assume absolute path
+                return android.graphics.BitmapFactory.decodeFile(uriString);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading bitmap from URI: " + uriString, e);
+            return null;
         }
     }
 }

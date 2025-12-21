@@ -5,7 +5,7 @@
     <string name="service_description">Keep Alive Service</string>
     <string name="accessibility_service_label">银河OS工具箱服务</string>
     <string name="activate_steering_wheel">激活方控功能</string>
-    <string name="app_credit">v%1$s by @geekz Powered by Gemini</string>
+    <string name="app_credit">v%1$s by @rfvcdewsxzaq Powered by Gemini</string>
     
     <string name="auto_start_apps">行车自动启动应用</string>
     <string name="return_to_home">启动后返回桌面</string>
@@ -64,7 +64,6 @@
     <string name="sensor_title">数据监测</string>
     <string name="sensor_day_night">光线感应</string>
     <string name="sensor_speed_status">车速</string>
-    <string name="scan_vehicle_constants">扫描常量(信号/转向)</string>
     <string name="sensor_value_format">%1$s: %2$s</string>
     
     <string name="prop_avm">AVM 状态</string>
