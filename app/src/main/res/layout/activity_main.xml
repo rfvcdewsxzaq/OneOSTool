@@ -865,24 +865,7 @@
 
             </LinearLayout>
 
-            <!-- Navigation Info Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="8dp"
-                android:paddingHorizontal="8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="导航信息"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:layout_marginBottom="8dp"/>
-
-
-            </LinearLayout>
 
             <!-- Divider -->
             <View
