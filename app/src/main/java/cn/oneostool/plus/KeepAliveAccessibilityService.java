@@ -16,30 +16,35 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import androidx.core.content.ContextCompat;
 
-import com.geely.lib.oneosapi.mediacenter.IMediaCenter;
-import com.geely.lib.oneosapi.mediacenter.IMusicManager;
-import com.geely.lib.oneosapi.mediacenter.listener.IMusicStateListener;
-import com.geely.lib.oneosapi.mediacenter.bean.MediaData;
+import com.ecarx.xui.adaptapi.car.vehicle.IBcm;
+import com.ecarx.xui.adaptapi.car.vehicle.IDayMode;
+import com.ecarx.xui.adaptapi.car.vehicle.IPAS;
+//import com.geely.lib.oneosapi.mediacenter.IMediaCenter;
+//import com.geely.lib.oneosapi.mediacenter.IMusicManager;
+//import com.geely.lib.oneosapi.mediacenter.listener.IMusicStateListener;
+///import com.geely.lib.oneosapi.mediacenter.bean.MediaData;
 
 import com.ecarx.xui.adaptapi.car.Car;
 import com.ecarx.xui.adaptapi.car.ICar;
 import com.ecarx.xui.adaptapi.car.base.ICarFunction;
-import com.ecarx.xui.adaptapi.car.vehicle.IDayMode;
-import com.ecarx.xui.adaptapi.car.vehicle.IPAS;
+// import com.ecarx.xui.adaptapi.car.vehicle.IDayMode;
+// import com.ecarx.xui.adaptapi.car.vehicle.IPAS;
 import com.ecarx.xui.adaptapi.car.vehicle.IVehicle;
 import com.ecarx.xui.adaptapi.car.sensor.ISensor;
 import com.ecarx.xui.adaptapi.car.sensor.ISensorEvent;
-import com.ecarx.xui.adaptapi.FunctionStatus;
+//import com.ecarx.xui.adaptapi.FunctionStatus;
 
-import android.media.MediaMetadata;
+//import android.media.MediaMetadata;
 import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
-import android.app.Notification;
+//import android.media.session.PlaybackState;
+//import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.NotificationManager;
-import android.text.TextUtils; // Added for TextUtils
+//import android.app.NotificationManager;
+//import android.text.TextUtils; // Added for TextUtils
 import com.geely.lib.oneosapi.OneOSApiManager;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class KeepAliveAccessibilityService extends AccessibilityService {
 
@@ -49,10 +54,10 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     // Media Session
     private MediaSession mMediaSession;
     private NotificationManager mNotificationManager;
-    private NotificationChannel mNotificationChannel; // Added
+    // private NotificationChannel mNotificationChannel; // Added
     private static final String CHANNEL_ID = "media_channel";
     private static final int NOTIFICATION_ID = 1001;
-    private MediaMetadata.Builder mMetadataBuilder; // Added
+    // private MediaMetadata.Builder mMetadataBuilder; // Added
     private boolean mIsMediaNotificationEnabled = true; // Added
     private com.geely.lib.oneosapi.mediacenter.bean.MediaData mCurrentMediaData; // Added field
 
@@ -269,27 +274,37 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     }
 
     // Day/Night Mode Constants
-    private static final int FUNC_THEMEMODE_SETTING = 0x20150100;
+    private static final int FUNC_THEMEMODE_SETTING = IDayMode.SETTING_FUNC_DAYMODE_SETTING;// 0x20150100;
     // Removed local SENSOR_TYPE_DAY_NIGHT, using ISensor.SENSOR_TYPE_DAY_NIGHT
     private static final int SENSOR_TYPE_SPEED = ISensor.SENSOR_TYPE_CAR_SPEED;
     // 0x100100;
     // Removed FUNC_REVERSE_GEAR
-    private static final int FUNC_AVM_STATUS = IPAS.PAS_FUNC_PAC_ACTIVATION;
+    private static final int FUNC_AVM_STATUS = IPAS.PAS_FUNC_PAC_ACTIVATION;// 0x29030200;
     private static final int FUNC_BRIGHTNESS_DAY = IVehicle.SETTING_FUNC_BRIGHTNESS_DAY;
     private static final int FUNC_BRIGHTNESS_NIGHT = IVehicle.SETTING_FUNC_BRIGHTNESS_NIGHT;
-    private static final int FUNC_TURN_SIGNAL_LEFT = 0x21051100;
-    private static final int FUNC_TURN_SIGNAL_RIGHT = 0x21051200;
+    private static final int FUNC_TURN_SIGNAL_LEFT = IBcm.BCM_FUNC_LIGHT_LEFT_TRUN_SIGNAL;// 0x21051100;
+    private static final int FUNC_TURN_SIGNAL_RIGHT = IBcm.BCM_FUNC_LIGHT_RIGHT_TRUN_SIGNAL;// 0x21051200;
+    private static final int FUNC_AVM_VIEW_REG = IPAS.PAS_FUNC_PAC_VIEW_SELECTION;// 0x23031100; // Corrected to
+                                                                                  // PAS_FUNC_PAC_VIEW_SELECTION
+    private static final int VALUE_AVM_VIEW_REAR_LEFT_3D = IPAS.PAC_VIEW_SELECTION_REAR_LEFT_3D;// PAC_3DVIEW_POSITION_REAR_LEFT;//
+                                                                                                // ;//0x2303110c;
+    private static final int VALUE_AVM_VIEW_REAR_RIGHT_3D = IPAS.PAC_VIEW_SELECTION_REAR_RIGHT_3D;// PAC_3DVIEW_POSITION_REAR_RIGHT;//
+                                                                                                  // PAC_VIEW_SELECTION_REAR_RIGHT_3D;//0x2303110d;
+    private static final int FUNC_AVM_ANGLE_REG = IPAS.PAS_FUNC_PAC_3DVIEW_POSITION;// 0x23031200;
     private static final int ZONE_DRIVER = 1;
     private static final int ZONE_ALL = 0x80000000;
-    private static final int VALUE_THEMEMODE_DAY = 0x20150101;
-    private static final int VALUE_THEMEMODE_NIGHT = 0x20150102;
-    private static final int VALUE_THEMEMODE_AUTO = 0x20150103;
-    private static final int VALUE_THEMEMODE_CUSTOM = 0x20150104;
-    private static final int VALUE_THEMEMODE_SUNRISE_AND_SUNSET = 0x20150105;
+    // private static final int VALUE_THEMEMODE_DAY =
+    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_DAY;//0x20150101;
+    // private static final int VALUE_THEMEMODE_NIGHT =
+    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_NIGHT;//0x20150102;
+    private static final int VALUE_THEMEMODE_AUTO = IDayMode.DAYMODE_SETTING_BRIGHTNESS_AUTO;// 0x20150103;
+    // private static final int VALUE_THEMEMODE_CUSTOM = 0x20150104;
+    // private static final int VALUE_THEMEMODE_SUNRISE_AND_SUNSET = 0x20150105;
 
     private final android.os.Handler mHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private boolean mIsMonitoring = false;
-    private static final long MONITOR_INTERVAL_MS = 100; // Updated to 100ms
+    private static final long MONITOR_INTERVAL_MS = 100; // Restored to 100ms per user request
+    private final AtomicBoolean mIsPollingLock = new AtomicBoolean(false);
 
     private final Runnable mMonitorRunnable = new Runnable() {
         @Override
@@ -329,6 +344,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private int mLastThemeMode = -1; // Added for Theme Mode persistence
     private int mLastTurnSignalLeft = 0;
     private int mLastTurnSignalRight = 0;
+    private int mLastAvmView = -1;
+    private int mLastAvmAngle = -1;
 
     // Smart AVM State
     private boolean mIsSmartAvmEnabled = false;
@@ -361,6 +378,18 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         Log.i(TAG, "SmartAVM: Triggering AVM (Speed dropped < 30 after > 30)");
                         try {
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+
+                            // Smart View Switching Logic
+                            if (mLastTurnSignalLeft == 1) {
+                                // Updated to 2-parameter call
+                                iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_LEFT_3D);
+                                Log.i(TAG, "SmartAVM: Switching to Rear Left 3D View");
+                            } else if (mLastTurnSignalRight == 1) {
+                                // Updated to 2-parameter call
+                                iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_RIGHT_3D);
+                                Log.i(TAG, "SmartAVM: Switching to Rear Right 3D View");
+                            }
+
                             mIsSmartAvmActive = true;
                             DebugLogger.toast(this, "智能360已自动开启");
                         } catch (Exception e) {
@@ -401,6 +430,17 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 mLastBrightnessNightValue = (int) brightNight;
             }
 
+            // Poll AVM View & Angle (Debug)
+            // int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL);
+            int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG);
+            if (avmView != -1)
+                mLastAvmView = avmView;
+
+            // int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG, ZONE_ALL);
+            int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG);
+            if (avmAngle != -1)
+                mLastAvmAngle = avmAngle;
+
             Log.d(TAG, "Polled Brightness - Day: " + mLastBrightnessDayValue + ", Night: " + mLastBrightnessNightValue);
 
             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
@@ -428,91 +468,119 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         intent.putExtra("prop_brightness_night", brightnessNight);
         intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
         intent.putExtra("prop_turn_right", mLastTurnSignalRight);
+        intent.putExtra("prop_avm_view", mLastAvmView);
+        intent.putExtra("prop_avm_angle", mLastAvmAngle);
         sendBroadcast(intent);
     }
 
     private void checkDayNightStatus(boolean enforceAuto) {
+        if (mIsPollingLock.get()) {
+            return; // Skip if already polling
+        }
+
         new Thread(() -> {
-            initCar();
-            if (iCarFunction != null) {
-                try {
-                    int currentMode = iCarFunction.getFunctionValue(FUNC_THEMEMODE_SETTING, ZONE_ALL);
-
-                    // Poll all values...
-                    // (Skipping redundant poll logic copy here, assuming it remains same)
-                    // ... [Actual Code Block Omitted for Brevity in Tool Call, focusing on removal
-                    // of enforcement]
-                    // Wait, cannot omit in replace_content. Need to rely on finding the enforcement
-                    // block.
-
-                    // Let's target the enforcement block specifically.
-
-                    // Read Sensors (Fallback/Initial)
-                    // We rely on listeners for updates, but initial read is good.
-                    // However, we just start listener below.
-                    // So we can skip manual read here to avoid blocking or errors if synchronous
-                    // read isn't supported.
-
-                    // Explicitly poll values to ensure initial state is captured
+            if (!mIsPollingLock.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                initCar();
+                if (iCarFunction != null) {
                     try {
-                        // Polling Speed (0x100100) - Assuming float or int? ISensor usually callbacks.
-                        // But we can try getFunctionValue? Or wait for listener.
-                        // SENSOR_TYPE_SPEED is likely ISensor.
-                        // But for properties (Reverse, AVM, Brightness), we SHOULD poll.
+                        int currentMode = iCarFunction.getFunctionValue(FUNC_THEMEMODE_SETTING, ZONE_ALL);
 
-                        int avm = iCarFunction.getFunctionValue(FUNC_AVM_STATUS, ZONE_ALL);
-                        if (avm != -1)
-                            mLastAvmValue = avm;
+                        // Poll all values...
+                        // (Skipping redundant poll logic copy here, assuming it remains same)
+                        // ... [Actual Code Block Omitted for Brevity in Tool Call, focusing on removal
+                        // of enforcement]
+                        // Wait, cannot omit in replace_content. Need to rely on finding the enforcement
+                        // block.
 
-                        // Poll Day Brightness
-                        float brightDay = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_DAY, ZONE_DRIVER);
-                        if (brightDay != -1f) {
-                            mLastBrightnessDayValue = (int) brightDay;
-                        }
+                        // Let's target the enforcement block specifically.
 
-                        // Poll Night Brightness
-                        float brightNight = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_NIGHT, ZONE_DRIVER);
-                        if (brightNight != -1f) {
-                            mLastBrightnessNightValue = (int) brightNight;
-                        }
+                        // Read Sensors (Fallback/Initial)
+                        // We rely on listeners for updates, but initial read is good.
+                        // However, we just start listener below.
+                        // So we can skip manual read here to avoid blocking or errors if synchronous
+                        // read isn't supported.
 
-                        // Poll Day/Night Sensor (User request: polling every 1s)
-                        if (iSensor != null) {
-                            int dayNight = iSensor.getSensorEvent(ISensor.SENSOR_TYPE_DAY_NIGHT);
-                            if (dayNight != -1) {
-                                mLastDayNightSensorValue = dayNight;
+                        // Explicitly poll values to ensure initial state is captured
+                        try {
+                            // Polling Speed (0x100100) - Assuming float or int? ISensor usually callbacks.
+                            // But we can try getFunctionValue? Or wait for listener.
+                            // SENSOR_TYPE_SPEED is likely ISensor.
+                            // But for properties (Reverse, AVM, Brightness), we SHOULD poll.
+
+                            // Poll AVM Status (On/Off) - 0x23030100
+                            int avmStatus = iCarFunction.getFunctionValue(FUNC_AVM_STATUS, ZONE_ALL); // Try Zone 0
+                            if (avmStatus != -1)
+                                mLastAvmValue = avmStatus;
+
+                            // Poll AVM View & Angle - Try Zone 0
+                            // int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL);
+                            int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG);
+                            if (avmView != -1)
+                                mLastAvmView = avmView;
+
+                            // int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG, ZONE_ALL);
+                            int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG);
+                            if (avmAngle != -1)
+                                mLastAvmAngle = avmAngle;
+
+                            // Poll Day Brightness
+                            float brightDay = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_DAY, ZONE_DRIVER);
+                            if (brightDay != -1f) {
+                                mLastBrightnessDayValue = (int) brightDay;
                             }
+
+                            // Poll Night Brightness
+                            float brightNight = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_NIGHT,
+                                    ZONE_DRIVER);
+                            if (brightNight != -1f) {
+                                mLastBrightnessNightValue = (int) brightNight;
+                            }
+
+                            // Poll Day/Night Sensor (User request: polling every 1s)
+                            if (iSensor != null) {
+                                int dayNight = iSensor.getSensorEvent(ISensor.SENSOR_TYPE_DAY_NIGHT);
+                                if (dayNight != -1) {
+                                    mLastDayNightSensorValue = dayNight;
+                                }
+                            }
+
+                            // Note: car.getSensorManager() doesn't usually have "getSensorValue".
+                            // UPDATE: User confirmed getSensorEvent is available.
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to poll initial function values: " + e.getMessage());
                         }
 
-                        // Note: car.getSensorManager() doesn't usually have "getSensorValue".
-                        // UPDATE: User confirmed getSensorEvent is available.
+                        if (currentMode != -1 && currentMode != 0) {
+                            mLastThemeMode = currentMode;
+                        }
+
+                        // Broadcast status to UI
+                        Intent intent = new Intent("cn.oneostool.plus.ACTION_DAY_NIGHT_STATUS");
+                        intent.putExtra("mode", mLastThemeMode);
+                        // Include last known sensor values to keep UI in sync
+                        intent.putExtra("sensor_day_night", mLastDayNightSensorValue);
+                        intent.putExtra("sensor_light", mLastSpeedSensorValue);
+                        intent.putExtra("prop_avm", mLastAvmValue);
+                        intent.putExtra("prop_brightness_day", mLastBrightnessDayValue);
+                        intent.putExtra("prop_brightness_night", mLastBrightnessNightValue);
+                        intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
+                        intent.putExtra("prop_turn_right", mLastTurnSignalRight);
+                        intent.putExtra("prop_avm_view", mLastAvmView);
+                        intent.putExtra("prop_avm_angle", mLastAvmAngle);
+                        sendBroadcast(intent);
+
+                        // Enforcement logic removed as per user request to replace "Force Auto" with
+                        // "Theme Mode Settings"
+                        // if (enforceAuto) { ... } removed so we don't override user selection.
                     } catch (Exception e) {
-                        Log.w(TAG, "Failed to poll initial function values: " + e.getMessage());
+                        Log.e(TAG, "Error checking/setting Day/Night mode", e);
                     }
-
-                    if (currentMode != -1 && currentMode != 0) {
-                        mLastThemeMode = currentMode;
-                    }
-
-                    // Broadcast status to UI
-                    Intent intent = new Intent("cn.oneostool.plus.ACTION_DAY_NIGHT_STATUS");
-                    intent.putExtra("mode", mLastThemeMode);
-                    // Include last known sensor values to keep UI in sync
-                    intent.putExtra("sensor_day_night", mLastDayNightSensorValue);
-                    intent.putExtra("sensor_light", mLastSpeedSensorValue);
-                    intent.putExtra("prop_avm", mLastAvmValue);
-                    intent.putExtra("prop_brightness_day", mLastBrightnessDayValue);
-                    intent.putExtra("prop_brightness_night", mLastBrightnessNightValue);
-                    intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
-                    intent.putExtra("prop_turn_right", mLastTurnSignalRight);
-                    sendBroadcast(intent);
-
-                    // Enforcement logic removed as per user request to replace "Force Auto" with
-                    // "Theme Mode Settings"
-                    // if (enforceAuto) { ... } removed so we don't override user selection.
-                } catch (Exception e) {
-                    Log.e(TAG, "Error checking/setting Day/Night mode", e);
                 }
+            } finally {
+                mIsPollingLock.set(false);
             }
         }).start();
 
@@ -750,6 +818,14 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
                             checkSmartAvmTrigger(mLastSpeedSensorValue);
+                        } else if (functionId == FUNC_AVM_VIEW_REG) {
+                            mLastAvmView = value;
+                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
+                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                        } else if (functionId == FUNC_AVM_ANGLE_REG) {
+                            mLastAvmAngle = value;
+                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
+                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
                         }
                     }
 
@@ -785,6 +861,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 iCarFunction.registerFunctionValueWatcher(FUNC_BRIGHTNESS_NIGHT, watcher);
                 iCarFunction.registerFunctionValueWatcher(FUNC_TURN_SIGNAL_LEFT, watcher);
                 iCarFunction.registerFunctionValueWatcher(FUNC_TURN_SIGNAL_RIGHT, watcher);
+                iCarFunction.registerFunctionValueWatcher(FUNC_AVM_VIEW_REG, watcher);
+                iCarFunction.registerFunctionValueWatcher(FUNC_AVM_ANGLE_REG, watcher);
                 // FUNC_DAYMODE_SETTING listener removed as per user request (not supported)
 
                 Log.i(TAG, "Function watchers registered (AVM, Brightness)");
@@ -873,8 +951,15 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         Log.i(TAG, "Test Signal: " + type);
                         if ("avm".equals(type)) {
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                        } else if ("avm_timed".equals(type)) {
+                        } else if ("avm_left_timed".equals(type)) {
+                            // Test Left Rear 3D View
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                            // Slight delay to ensure AVM is up? Or direct call. Trying direct call
+                            // sequence.
+                            // iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL,
+                            // VALUE_AVM_VIEW_REAR_LEFT_3D);
+                            iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_LEFT_3D);
+
                             mHandler.postDelayed(() -> {
                                 try {
                                     if (iCarFunction != null) {
@@ -884,26 +969,22 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                                     Log.e(TAG, "Error closing AVM in timed test", e);
                                 }
                             }, 3000);
-                        } else if ("left".equals(type)) {
-                            // 0x21051200 = Turn Signal Left (Guessing based on context)
-                            iCarFunction.setFunctionValue(0x21051200, ZONE_ALL, 1);
+                        } else if ("avm_right_timed".equals(type)) {
+                            // Test Right Rear 3D View
+                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                            // iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL,
+                            // VALUE_AVM_VIEW_REAR_RIGHT_3D);
+                            iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_RIGHT_3D);
+
                             mHandler.postDelayed(() -> {
                                 try {
-                                    if (iCarFunction != null)
-                                        iCarFunction.setFunctionValue(0x21051200, ZONE_ALL, 0);
+                                    if (iCarFunction != null) {
+                                        iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 0);
+                                    }
                                 } catch (Exception e) {
+                                    Log.e(TAG, "Error closing AVM in timed test", e);
                                 }
-                            }, 1000);
-                        } else if ("right".equals(type)) {
-                            // 0x21051100 = Turn Signal Right
-                            iCarFunction.setFunctionValue(0x21051100, ZONE_ALL, 1);
-                            mHandler.postDelayed(() -> {
-                                try {
-                                    if (iCarFunction != null)
-                                        iCarFunction.setFunctionValue(0x21051100, ZONE_ALL, 0);
-                                } catch (Exception e) {
-                                }
-                            }, 1000);
+                            }, 3000);
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Error in Test Turn Signal", e);
@@ -931,45 +1012,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 android.view.KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
                 if (event != null && event.getAction() == android.view.KeyEvent.ACTION_UP) {
                     Log.i(TAG, "Standard MEDIA_BUTTON received: " + event.getKeyCode());
-                }
-            } else if ("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL".equals(action)) {
-                String type = intent.getStringExtra("type");
-                Log.i(TAG, "Received Linkage Test: " + type);
-                if (iCarFunction == null) {
-                    DebugLogger.toast(context, "Car Service Not Ready");
-                    return;
-                }
-
-                try {
-                    if ("left".equals(type)) {
-                        // Try writing 1 (ON) to Turn Signal Left
-                        // Assuming zone is driver (or try ALL)
-                        boolean s1 = iCarFunction.setCustomizeFunctionValue(FUNC_TURN_SIGNAL_LEFT, ZONE_DRIVER, 1.0f);
-                        Log.i(TAG, "Set Turn Left (Cust): " + s1);
-                        if (!s1) {
-                            // Fallback to setFunctionValue
-                            boolean s2 = iCarFunction.setFunctionValue(FUNC_TURN_SIGNAL_LEFT, ZONE_DRIVER, 1);
-                            Log.i(TAG, "Set Turn Left (Std): " + s2);
-                        }
-                    } else if ("right".equals(type)) {
-                        boolean s1 = iCarFunction.setCustomizeFunctionValue(FUNC_TURN_SIGNAL_RIGHT, ZONE_DRIVER, 1.0f);
-                        Log.i(TAG, "Set Turn Right (Cust): " + s1);
-                        if (!s1) {
-                            boolean s2 = iCarFunction.setFunctionValue(FUNC_TURN_SIGNAL_RIGHT, ZONE_DRIVER, 1);
-                            Log.i(TAG, "Set Turn Right (Std): " + s2);
-                        }
-                    } else if ("avm".equals(type)) {
-                        // FUNC_AVM_STATUS = IPAS.PAS_FUNC_PAC_ACTIVATION (0x29030200)
-                        boolean s1 = iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                        Log.i(TAG, "Set AVM (Std): " + s1);
-                        if (!s1) {
-                            boolean s2 = iCarFunction.setCustomizeFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1.0f);
-                            Log.i(TAG, "Set AVM (Cust): " + s2);
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Linkage Test Failed", e);
-                    DebugLogger.toast(context, "测试失败: " + e.getMessage());
                 }
             }
         }
@@ -1484,9 +1526,22 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                                         .apply();
                             });
 
+                            // Detect if track changed to reset position
+                            boolean isTrackChange = false;
+                            if (mCurrentMediaData == null
+                                    || !android.text.TextUtils.equals(mCurrentMediaData.name, data.name)) {
+                                isTrackChange = true;
+                            }
+
                             // Update system MediaSession and post notification
                             mCurrentMediaData = data; // Update local field
                             updateMediaSession(data);
+
+                            if (isTrackChange) {
+                                Log.i(TAG, "Track changed, resetting position to 0");
+                                mLastPosition = 0;
+                                updateMediaSessionPosition(0);
+                            }
                         }
                     }
 

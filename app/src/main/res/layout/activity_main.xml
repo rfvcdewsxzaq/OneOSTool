@@ -72,6 +72,8 @@
                 android:animateLayoutChanges="true"
                 android:gravity="top">
 
+
+
             <!-- Auto Switch Toggle -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -168,15 +170,33 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
-            <Button
-                android:id="@+id/btnForceAvmTimed"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/layoutDebugAvmButtons"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="强制激活360影像3秒后关闭"
+                android:orientation="horizontal"
+                android:gravity="center"
                 android:visibility="gone"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btnForceAvmLeftTimed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="左后3D(3秒)"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginEnd="8dp"/>
+
+                <Button
+                    android:id="@+id/btnForceAvmRightTimed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="右后3D(3秒)"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
 
             <!-- Media Notification Toggle -->
             <LinearLayout
@@ -706,6 +726,56 @@
 
                 <TextView
                     android:id="@+id/tvTurnSignal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/mode_unknown"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- AVM View Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="360视角:"
+                    android:textSize="14sp"
+                    android:textColor="?android:attr/textColorSecondary"/>
+
+                <TextView
+                    android:id="@+id/tvPropAvmView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/mode_unknown"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <!-- AVM Angle Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3D视角角度:"
+                    android:textSize="14sp"
+                    android:textColor="?android:attr/textColorSecondary"/>
+
+                <TextView
+                    android:id="@+id/tvPropAvmAngle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"

@@ -485,15 +485,27 @@ public class MainActivity extends AppCompatActivity {
         // Initial visibility
         boolean isDebug = DebugLogger.isDebugEnabled(this);
 
-        Button btnForceAvmTimed = findViewById(R.id.btnForceAvmTimed);
-        if (btnForceAvmTimed != null) {
-            btnForceAvmTimed.setOnClickListener(v -> {
+        // AVM Debug Buttons
+        View layoutDebugAvmButtons = findViewById(R.id.layoutDebugAvmButtons);
+        Button btnForceAvmLeftTimed = findViewById(R.id.btnForceAvmLeftTimed);
+        Button btnForceAvmRightTimed = findViewById(R.id.btnForceAvmRightTimed);
+
+        if (btnForceAvmLeftTimed != null) {
+            btnForceAvmLeftTimed.setOnClickListener(v -> {
                 Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-                intent.putExtra("type", "avm_timed");
+                intent.putExtra("type", "avm_left_timed");
                 sendBroadcast(intent);
-                DebugLogger.toast(this, "正在强制开启360，3秒后关闭...");
+                DebugLogger.toast(this, "测试：左后3D视角 (3秒)");
             });
-            btnForceAvmTimed.setVisibility(isDebug ? View.VISIBLE : View.GONE);
+        }
+
+        if (btnForceAvmRightTimed != null) {
+            btnForceAvmRightTimed.setOnClickListener(v -> {
+                Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
+                intent.putExtra("type", "avm_right_timed");
+                sendBroadcast(intent);
+                DebugLogger.toast(this, "测试：右后3D视角 (3秒)");
+            });
         }
 
         // Debug Switch
@@ -507,14 +519,17 @@ public class MainActivity extends AppCompatActivity {
         // Initial visibility
         layoutDebugButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         layoutMediaButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
+        if (layoutDebugAvmButtons != null) {
+            layoutDebugAvmButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
+        }
 
         // Update visibility in debug switch listener
         switchDebug.setOnCheckedChangeListener((buttonView, isChecked) -> {
             DebugLogger.setDebugEnabled(this, isChecked);
             layoutDebugButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             layoutMediaButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            if (btnForceAvmTimed != null) {
-                btnForceAvmTimed.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            if (layoutDebugAvmButtons != null) {
+                layoutDebugAvmButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             }
 
             if (isChecked) {
@@ -555,11 +570,11 @@ public class MainActivity extends AppCompatActivity {
                 int brightnessNight = intent.getIntExtra("prop_brightness_night", -1);
                 int leftTurn = intent.getIntExtra("prop_turn_left", 0);
                 int rightTurn = intent.getIntExtra("prop_turn_right", 0);
+                int avmView = intent.getIntExtra("prop_avm_view", -1);
+                int avmAngle = intent.getIntExtra("prop_avm_angle", -1);
 
                 updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
-                        rightTurn);
-                updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
-                        rightTurn);
+                        rightTurn, avmView, avmAngle);
             }
         }
     };
@@ -688,11 +703,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateSensorStatus(int dayNightThemeMode, int dayNightSensor, float lightSensor, int avmProp,
-            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn) {
+            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn, int avmView, int avmAngle) {
         TextView tvPropDayNightTheme = findViewById(R.id.tvPropDayNightTheme);
         TextView tvSensorDayNight = findViewById(R.id.tvSensorDayNight);
         TextView tvSensorSpeed = findViewById(R.id.tvSensorSpeed);
         TextView tvPropAvm = findViewById(R.id.tvPropAvm);
+        TextView tvPropAvmView = findViewById(R.id.tvPropAvmView);
+        TextView tvPropAvmAngle = findViewById(R.id.tvPropAvmAngle);
         TextView tvPropBrightnessDay = findViewById(R.id.tvPropBrightnessDay);
         TextView tvPropBrightnessNight = findViewById(R.id.tvPropBrightnessNight);
 
@@ -779,7 +796,18 @@ public class MainActivity extends AppCompatActivity {
             String valStr = (brightnessNight == -1) ? getString(R.string.mode_unknown)
                     : String.valueOf(brightnessNight);
             tvPropBrightnessNight.setText(valStr);
+        }
 
+        if (tvPropAvmView != null) {
+            String valStr = (avmView == -1) ? getString(R.string.mode_unknown)
+                    : String.format(Locale.getDefault(), "0x%s", Integer.toHexString(avmView));
+            tvPropAvmView.setText(valStr);
+        }
+
+        if (tvPropAvmAngle != null) {
+            String valStr = (avmAngle == -1) ? getString(R.string.mode_unknown)
+                    : String.format(Locale.getDefault(), "0x%s", Integer.toHexString(avmAngle));
+            tvPropAvmAngle.setText(valStr);
         }
     }
 
