@@ -37,7 +37,9 @@ import android.media.session.PlaybackState;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.NotificationManager;
 import android.text.TextUtils; // Added for TextUtils
+import com.geely.lib.oneosapi.OneOSApiManager;
 
 public class KeepAliveAccessibilityService extends AccessibilityService {
 
@@ -104,6 +106,15 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         mTargetBrightnessNight = prefs.getInt("override_night_value", 3);
         mTargetBrightnessAvm = prefs.getInt("override_avm_value", 15);
 
+        // Restore mCurrentSource
+        mCurrentSource = prefs.getInt("last_media_source", -1); // Default to -1
+
+        // Restore Smart AVM State
+        mIsSmartAvmEnabled = prefs.getBoolean("enable_smart_avm", false);
+
+        // Restore Media Notification State
+        mIsMediaNotificationEnabled = prefs.getBoolean("enable_media_notification", true);
+
         // Start enforcement loop
         mOverrideHandler.post(mOverrideRunnable);
 
@@ -114,9 +125,24 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             restorationData.name = lastTitle;
             restorationData.artist = prefs.getString("last_media_artist", "");
             restorationData.albumName = prefs.getString("last_media_album", "");
+            restorationData.duration = prefs.getLong("last_media_duration", 0);
+
+            // Try to restore album art
+            try {
+                java.io.File file = new java.io.File(getCacheDir(), "album_art.png");
+                if (file.exists()) {
+                    restorationData.albumCover = android.graphics.BitmapFactory.decodeFile(file.getAbsolutePath());
+                    Log.i(TAG, "Restored album art from cache.");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to restore album art", e);
+            }
+
             mCurrentMediaData = restorationData;
             // Update Session immediately so HUD shows something
             updateMediaSession(restorationData);
+            // Force PAUSE state so timer doesn't run on cold start
+            executeMediaSessionStateUpdate(1);
         }
 
         // Always start monitoring for Data Monitor feature
@@ -142,6 +168,12 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         filter.addAction("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG");
         filter.addAction(Intent.ACTION_MEDIA_BUTTON);
         ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+
+        ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
+
+        // Initialize OneOS API
+        OneOSApiManager.getInstance().init(this);
+        // Delay navigation monitoring init to allow service binding
 
     }
 
@@ -834,6 +866,49 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 mTargetBrightnessAvm = intent.getIntExtra("avm", 15);
                 Log.d(TAG, "Override Config Updated: " + mIsOverrideEnabled + " D:" + mTargetBrightnessDay + " N:"
                         + mTargetBrightnessNight + " A:" + mTargetBrightnessAvm);
+            } else if ("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL".equals(action)) {
+                String type = intent.getStringExtra("type");
+                if (iCarFunction != null) {
+                    try {
+                        Log.i(TAG, "Test Signal: " + type);
+                        if ("avm".equals(type)) {
+                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                        } else if ("avm_timed".equals(type)) {
+                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                            mHandler.postDelayed(() -> {
+                                try {
+                                    if (iCarFunction != null) {
+                                        iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 0);
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Error closing AVM in timed test", e);
+                                }
+                            }, 3000);
+                        } else if ("left".equals(type)) {
+                            // 0x21051200 = Turn Signal Left (Guessing based on context)
+                            iCarFunction.setFunctionValue(0x21051200, ZONE_ALL, 1);
+                            mHandler.postDelayed(() -> {
+                                try {
+                                    if (iCarFunction != null)
+                                        iCarFunction.setFunctionValue(0x21051200, ZONE_ALL, 0);
+                                } catch (Exception e) {
+                                }
+                            }, 1000);
+                        } else if ("right".equals(type)) {
+                            // 0x21051100 = Turn Signal Right
+                            iCarFunction.setFunctionValue(0x21051100, ZONE_ALL, 1);
+                            mHandler.postDelayed(() -> {
+                                try {
+                                    if (iCarFunction != null)
+                                        iCarFunction.setFunctionValue(0x21051100, ZONE_ALL, 0);
+                                } catch (Exception e) {
+                                }
+                            }, 1000);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error in Test Turn Signal", e);
+                    }
+                }
             } else if ("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG".equals(action)) {
                 mIsSmartAvmEnabled = intent.getBooleanExtra("enabled", false);
                 Log.i(TAG, "Smart AVM Config Updated: " + mIsSmartAvmEnabled);
@@ -1058,8 +1133,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
                 if (mOneOSServiceManager != null) {
                     Log.i(TAG, "IServiceManager obtained successfully");
-                    DebugLogger.toast(KeepAliveAccessibilityService.this,
-                            "IServiceManager 获取成功");
+                    DebugLogger.toast(KeepAliveAccessibilityService.this, "IServiceManager 获取成功");
                     mRetryCount = 0;
                     mMediaRetryCount = 0;
                     mOneOSInputManager = null; // Reset
@@ -1101,7 +1175,9 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             mediaIntent.putExtra("title", mCurrentMediaData.name);
             mediaIntent.putExtra("artist", mCurrentMediaData.artist);
             mediaIntent.putExtra("album", mCurrentMediaData.albumName);
-            // Don't send has_art here to avoid complexity, main aim receives text info
+            // Send has_art status so Main UI knows to load the image
+            boolean hasArt = (mCurrentMediaData.albumCover != null);
+            mediaIntent.putExtra("has_art", hasArt);
             sendBroadcast(mediaIntent);
         }
     }
@@ -1403,6 +1479,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                                 p.edit().putString("last_media_title", fTitle)
                                         .putString("last_media_artist", fArtist)
                                         .putString("last_media_album", fAlbum)
+                                        .putInt("last_media_source", mCurrentSource)
+                                        .putLong("last_media_duration", data.duration)
                                         .apply();
                             });
 
@@ -1492,8 +1570,12 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private long mLastPosition = 0;
     private int mLastPlaybackState = android.media.session.PlaybackState.STATE_NONE;
     private int mCurrentSource = -1; // Track the active audio source
+    private boolean mIsDebouncingPause = false; // "Soft Pause" flag
 
     private void updateMediaSessionPosition(long position) {
+        if (!mIsMediaNotificationEnabled)
+            return;
+
         if (mMediaSession == null)
             return;
 
@@ -1512,13 +1594,23 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                     | android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT
                     | android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS);
 
+            // If Soft Pause is active, FORCE speed to 0 but keep state PLAYING
+            float speed = (mLastPlaybackState == android.media.session.PlaybackState.STATE_PLAYING) ? 1.0f : 0f;
+            if (mIsDebouncingPause) {
+                speed = 0.0f;
+                // Ensure we are logically PLAYING so icon stays as "Play" (which means Pause
+                // button shown)
+                if (mLastPlaybackState != android.media.session.PlaybackState.STATE_PLAYING) {
+                    mLastPlaybackState = android.media.session.PlaybackState.STATE_PLAYING;
+                }
+            }
+
             // Use current state and saved position
-            stateBuilder.setState(mLastPlaybackState, mLastPosition,
-                    mLastPlaybackState == android.media.session.PlaybackState.STATE_PLAYING ? 1.0f : 0f);
+            stateBuilder.setState(mLastPlaybackState, mLastPosition, speed);
 
             mMediaSession.setPlaybackState(stateBuilder.build());
 
-            // Ensure session is active if playing
+            // Ensure session is active if playing (or soft paused)
             if (mLastPlaybackState == android.media.session.PlaybackState.STATE_PLAYING && !mMediaSession.isActive()) {
                 mMediaSession.setActive(true);
             }
@@ -1531,28 +1623,47 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private Runnable mStateDebounceRunnable;
 
     private void updateMediaSessionState(int oneOsState) {
-        // Debounce Logic
+        if (mMediaSession == null)
+            return;
+
         // 0 = PLAYING, 1 = PAUSED
         if (oneOsState == 0) {
-            // If Playing, apply IMMEDIATELY and cancel any pending "Pause"
+            // PLAY: Cancel any pending Pause, Reset Soft Pause, Execute Play immediately
             if (mStateDebounceRunnable != null) {
                 mStateDebounceHandler.removeCallbacks(mStateDebounceRunnable);
+                mStateDebounceRunnable = null;
             }
+            mIsDebouncingPause = false;
             executeMediaSessionStateUpdate(0);
         } else {
-            // If Paused (1 or other), delay it to see if it's just a transition
+            // PAUSE:
+            // 1. Cancel previous pending runnable to reset timer (if any)
             if (mStateDebounceRunnable != null) {
                 mStateDebounceHandler.removeCallbacks(mStateDebounceRunnable);
             }
+
+            // 2. Enable Soft Pause: Keep "Play" icon, but STOP time (Speed 0)
+            mIsDebouncingPause = true;
+            // Immediate update: VISUAL=PLAYING, LOGICAL=SPEED 0
+            // We reuse executeMediaSessionStateUpdate(0) but mIsDebouncingPause=true will
+            // force speed=0
+            executeMediaSessionStateUpdate(0);
+
+            // 3. Schedule "Hard Pause" after 5 seconds
             mStateDebounceRunnable = () -> {
-                executeMediaSessionStateUpdate(oneOsState);
+                Log.d(TAG, "Debounce finished: Soft Pause -> Hard Pause");
+                mIsDebouncingPause = false;
+                executeMediaSessionStateUpdate(oneOsState); // actually PAUSE
+                mStateDebounceRunnable = null;
             };
-            // 1000ms debounce time
-            mStateDebounceHandler.postDelayed(mStateDebounceRunnable, 1000);
+            mStateDebounceHandler.postDelayed(mStateDebounceRunnable, 5000); // 5000ms debounce
         }
     }
 
     private void executeMediaSessionStateUpdate(int oneOsState) {
+        if (!mIsMediaNotificationEnabled)
+            return;
+
         if (mMediaSession == null)
             return;
 
@@ -1585,8 +1696,19 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             // Save state
             mLastPlaybackState = state;
 
+            // Soft Pause Logic adjustment for Speed
+            float speed = isPlaying ? 1.0f : 0f;
+            if (mIsDebouncingPause) {
+                speed = 0.0f; // Force stop time
+                // Force State to PLAYING if it isn't already, to keep icon
+                if (!isPlaying) {
+                    state = android.media.session.PlaybackState.STATE_PLAYING;
+                    mLastPlaybackState = state; // Update tracking
+                }
+            }
+
             // Use new state and LAST KNOWN position
-            stateBuilder.setState(state, mLastPosition, isPlaying ? 1.0f : 0f);
+            stateBuilder.setState(state, mLastPosition, speed);
 
             mMediaSession.setPlaybackState(stateBuilder.build());
 
@@ -1617,11 +1739,11 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         // Media Notification Check
         if (!mIsMediaNotificationEnabled) {
+            if (mMediaSession != null && mMediaSession.isActive()) {
+                mMediaSession.setActive(false);
+            }
             if (mNotificationManager != null) {
                 mNotificationManager.cancel(NOTIFICATION_ID);
-            }
-            if (mMediaSession.isActive()) {
-                mMediaSession.setActive(false);
             }
             return;
         }

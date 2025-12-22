@@ -168,6 +168,16 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
 
+            <Button
+                android:id="@+id/btnForceAvmTimed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="强制激活360影像3秒后关闭"
+                android:visibility="gone"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_marginBottom="16dp"/>
+
             <!-- Media Notification Toggle -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -652,6 +662,8 @@
                     android:textSize="14sp"/>
             </LinearLayout>
 
+
+
             <!-- AVM Status -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -853,6 +865,25 @@
 
             </LinearLayout>
 
+            <!-- Navigation Info Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="导航信息"
+                    android:textSize="14sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:layout_marginBottom="8dp"/>
+
+
+            </LinearLayout>
+
             <!-- Divider -->
             <View
                 android:layout_width="match_parent"
@@ -877,34 +908,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Auto Mode Status -->
-                <LinearLayout
-                    android:id="@+id/layoutAutoModeStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/imgAutoModeIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_close"
-                        android:layout_marginEnd="16dp"
-                        android:contentDescription="@string/force_auto_mode"/>
-
-                    <TextView
-                        android:id="@+id/tvAutoModeStatus"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorPrimary"/>
-                </LinearLayout>
 
                 <!-- Media Key Service Status -->
                 <LinearLayout
@@ -936,6 +939,36 @@
                         android:textSize="15sp" />
                 </LinearLayout>
 
+                <!-- Media Info Service Status -->
+                <LinearLayout
+                    android:id="@+id/layoutMediaInfoServiceStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp">
+
+                    <ImageView
+                        android:id="@+id/imgMediaInfoServiceIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_close" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="媒体信息监听服务"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+
+
                 <!-- Accessibility Status -->
                 <LinearLayout
                     android:id="@+id/statusAccessibility"
@@ -952,32 +985,18 @@
                         android:id="@+id/imgStatus"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_close" />
 
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/txtPermissionName"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/txtPermissionName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/perm_accessibility"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/perm_desc_accessibility"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                        android:text="@string/perm_accessibility"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp" />
 
                     <Button
                         android:id="@+id/btnFix"
@@ -995,56 +1014,7 @@
                 <include layout="@layout/item_permission_status" android:id="@+id/statusStorage"/>
                 <include layout="@layout/item_permission_status" android:id="@+id/statusBattery"/>
 
-            <!-- Debug Actions Row (Turn Signal Test) -->
-            <LinearLayout
-                android:id="@+id/layoutDebugActions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="32dp"
-                android:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content" 
-                    android:layout_height="wrap_content"
-                    android:text="转向灯/360联动测试"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:layout_marginVertical="8dp"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <Button
-                        android:id="@+id/btnTestTurnLeft"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/test_turn_left"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_marginEnd="4dp"/>
-                    <Button
-                        android:id="@+id/btnTestTurnRight"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/test_turn_right"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_marginStart="4dp"/>
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnTestForceAvm"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/test_force_avm"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="16dp"/>
-
-            </LinearLayout>
 
             </LinearLayout>
 

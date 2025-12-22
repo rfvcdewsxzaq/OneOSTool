@@ -4,6 +4,7 @@ plugins {
 
 android {
     namespace 'cn.oneostool.plus'
+    compileSdk 34
 
     defaultConfig {
         applicationId "cn.oneostool.plus"

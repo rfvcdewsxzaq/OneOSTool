@@ -36,7 +36,7 @@
     <string name="key_play_pause">播放/暂停 (85)</string>
     <string name="key_prev_track">上一曲 (88)</string>
     <string name="key_unknown">未知</string>
-    <string name="media_key_service_title">媒体按键监听服务</string>
+    <string name="media_key_service_title">方控按键监听服务</string>
     <string name="media_next">下一曲</string>
     <string name="media_play_pause">播放/暂停</string>
     <string name="media_prev">上一曲</string>
@@ -47,9 +47,9 @@
     <string name="steering_wheel_disabled">方控功能已禁用</string>
     <string name="steering_wheel_enabled">方控功能已启用</string>
     
-    <string name="override_brightness_title">车机亮度锁定</string>
+    <string name="override_brightness_title">主驾屏亮度锁定</string>
     <string name="override_brightness">强制亮度控制</string>
-    <string name="override_brightness_avm">AVM 亮度锁定</string>
+    <string name="override_brightness_avm">360 亮度锁定</string>
     <string name="override_brightness_day">白天亮度锁定</string>
     <string name="override_brightness_night">夜间亮度锁定</string>
     
@@ -66,7 +66,7 @@
     <string name="sensor_speed_status">车速</string>
     <string name="sensor_value_format">%1$s: %2$s</string>
     
-    <string name="prop_avm">AVM 状态</string>
+    <string name="prop_avm">360 状态</string>
     <string name="prop_brightness_day">白天亮度</string>
     <string name="prop_brightness_night">夜间亮度</string>
     <string name="prop_day_night_theme">主题模式</string>

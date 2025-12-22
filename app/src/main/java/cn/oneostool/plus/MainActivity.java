@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         checkPermissions(); // Refresh status on resume
+        updateOneOSStatus(false); // Initialize with default styling (disconnected)
 
         android.content.IntentFilter filter = new android.content.IntentFilter();
         filter.addAction("cn.oneostool.plus.ACTION_DAY_NIGHT_STATUS");
@@ -94,9 +95,9 @@ public class MainActivity extends AppCompatActivity {
         android.content.IntentFilter filterPosition = new android.content.IntentFilter(
                 "cn.oneostool.plus.ACTION_MEDIA_POSITION");
         ContextCompat.registerReceiver(this, mMediaInfoReceiver, filterMedia, ContextCompat.RECEIVER_EXPORTED);
+        ContextCompat.registerReceiver(this, mMediaInfoReceiver, filterMedia, ContextCompat.RECEIVER_EXPORTED);
         ContextCompat.registerReceiver(this, mMediaPositionReceiver, filterPosition, ContextCompat.RECEIVER_EXPORTED);
 
-        // Request status update
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_DAY_NIGHT_STATUS"));
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_ONEOS_STATUS"));
     }
@@ -156,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Vehicle Theme Mode Settings
         Spinner spinnerThemeMode = findViewById(R.id.spinnerThemeMode);
-        TextView tvAutoModeStatus = findViewById(R.id.tvAutoModeStatus);
 
         // Theme Mode Options
         String[] themeOptions = {
@@ -268,11 +268,6 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("enabled", isChecked);
             sendBroadcast(intent);
         });
-
-        // Set initial text to avoid showing placeholder
-        if (tvAutoModeStatus != null) {
-            tvAutoModeStatus.setText(getString(R.string.status_auto_mode, getString(R.string.mode_unknown)));
-        }
 
         // ============================================
         // Brightness Override Logic
@@ -487,49 +482,40 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnMediaNext)
                 .setOnClickListener(v -> simulateMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_NEXT));
 
-        View layoutDebugActions = findViewById(R.id.layoutDebugActions);
-
-        // AVM Linkage Test Buttons
-        findViewById(R.id.btnTestTurnLeft).setOnClickListener(v -> {
-            Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-            intent.putExtra("type", "left");
-            sendBroadcast(intent);
-            DebugLogger.toast(this, "模拟左转向信号...");
-        });
-        findViewById(R.id.btnTestTurnRight).setOnClickListener(v -> {
-            Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-            intent.putExtra("type", "right");
-            sendBroadcast(intent);
-            DebugLogger.toast(this, "模拟右转向信号...");
-        });
-        findViewById(R.id.btnTestForceAvm).setOnClickListener(v -> {
-            Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-            intent.putExtra("type", "avm");
-            sendBroadcast(intent);
-            DebugLogger.toast(this, "尝试强制开启 360...");
-        });
-
         // Initial visibility
+        boolean isDebug = DebugLogger.isDebugEnabled(this);
+
+        Button btnForceAvmTimed = findViewById(R.id.btnForceAvmTimed);
+        if (btnForceAvmTimed != null) {
+            btnForceAvmTimed.setOnClickListener(v -> {
+                Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
+                intent.putExtra("type", "avm_timed");
+                sendBroadcast(intent);
+                DebugLogger.toast(this, "正在强制开启360，3秒后关闭...");
+            });
+            btnForceAvmTimed.setVisibility(isDebug ? View.VISIBLE : View.GONE);
+        }
 
         // Debug Switch
         SwitchMaterial switchDebug = findViewById(R.id.switchDebug);
         // if (!BuildConfig.DEBUG) {
         // switchDebug.setVisibility(View.GONE);
         // }
-        boolean isDebug = DebugLogger.isDebugEnabled(this);
+        // boolean isDebug = DebugLogger.isDebugEnabled(this); // Moved up
         switchDebug.setChecked(isDebug);
 
         // Initial visibility
         layoutDebugButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         layoutMediaButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
-        layoutDebugActions.setVisibility(isDebug ? View.VISIBLE : View.GONE);
 
         // Update visibility in debug switch listener
         switchDebug.setOnCheckedChangeListener((buttonView, isChecked) -> {
             DebugLogger.setDebugEnabled(this, isChecked);
             layoutDebugButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             layoutMediaButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            layoutDebugActions.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            if (btnForceAvmTimed != null) {
+                btnForceAvmTimed.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            }
 
             if (isChecked) {
                 DebugLogger.toast(this, "调试模式已开启，请向下滚动查看测试按钮");
@@ -570,7 +556,8 @@ public class MainActivity extends AppCompatActivity {
                 int leftTurn = intent.getIntExtra("prop_turn_left", 0);
                 int rightTurn = intent.getIntExtra("prop_turn_right", 0);
 
-                updateAutoModeStatus(mode);
+                updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
+                        rightTurn);
                 updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
                         rightTurn);
             }
@@ -675,92 +662,28 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void updateAutoModeStatus(int mode) {
-        TextView tvAutoModeStatus = findViewById(R.id.tvAutoModeStatus);
-        ImageView imgAutoModeIcon = findViewById(R.id.imgAutoModeIcon);
-        // Sync Spinner
-        Spinner spinnerThemeMode = findViewById(R.id.spinnerThemeMode);
+    private void updateOneOSStatus(boolean isConnected) {
+        // Media Key Service
+        ImageView imgMediaKey = findViewById(R.id.imgMediaKeyServiceIcon);
+        // Media Info Service
+        ImageView imgMediaInfo = findViewById(R.id.imgMediaInfoServiceIcon);
 
-        if (spinnerThemeMode != null) {
-            int index;
-            switch (mode) {
-                case 0x20150103:
-                    index = 0;
-                    break; // Auto
-                case 0x20150105:
-                    index = 1;
-                    break; // Sunrise
-                case 0x20150101:
-                    index = 2;
-                    break; // Day
-                case 0x20150102:
-                    index = 3;
-                    break; // Night
-                default:
-                    index = 0;
-                    break; // Default Auto
-            }
-            // Avoid triggering listener if already selected
-            // Avoid triggering listener if already selected
-            if (spinnerThemeMode.getSelectedItemPosition() != index) {
-                // Check if user is interacting or recently interacted
-                if (System.currentTimeMillis() - mLastInteractionTime > INTERACTION_COOLDOWN_MS) {
-                    mIsUpdatingSpinner = true; // Set flag
-                    spinnerThemeMode.setSelection(index);
-                    mIsUpdatingSpinner = false; // Reset flag
-                }
-            }
+        if (imgMediaKey != null) {
+            updateStatusIcon(imgMediaKey, isConnected);
+        }
+        if (imgMediaInfo != null) {
+            updateStatusIcon(imgMediaInfo, isConnected);
         }
 
-        if (tvAutoModeStatus == null)
-            return;
-
-        String modeStr;
-        int iconRes;
-
-        switch (mode) { // ... existing switch ...
-            case 0x20150103: // DAYMODE_SETTING_AUTO
-                modeStr = getString(R.string.mode_auto);
-                iconRes = R.drawable.ic_daymode_auto;
-                break;
-            case 0x20150101: // DAYMODE_SETTING_DAY
-                modeStr = getString(R.string.mode_day);
-                iconRes = R.drawable.ic_daymode_light;
-                break;
-            case 0x20150102: // DAYMODE_SETTING_NIGHT
-                modeStr = getString(R.string.mode_night);
-                iconRes = R.drawable.ic_daymode_dark;
-                break;
-            case 0x20150104: // VALUE_DAYMODE_CUSTOM
-                modeStr = getString(R.string.mode_custom);
-                iconRes = R.drawable.ic_daymode_auto; // Use auto icon for now
-                break;
-            case 0x20150105: // VALUE_DAYMODE_SUNRISE_AND_SUNSET
-                modeStr = getString(R.string.mode_sunrise_sunset);
-                iconRes = R.drawable.ic_daymode_time;
-                break;
-            default:
-                modeStr = getString(R.string.mode_unknown);
-                iconRes = R.drawable.ic_close;
-                break;
-        }
-        tvAutoModeStatus.setText(getString(R.string.status_auto_mode, modeStr));
-        if (imgAutoModeIcon != null) {
-            imgAutoModeIcon.setImageResource(iconRes);
-        }
     }
 
-    private void updateOneOSStatus(boolean isConnected) {
-        ImageView imgStatus = findViewById(R.id.imgMediaKeyServiceIcon);
-        if (imgStatus == null)
-            return;
-
-        if (isConnected) {
-            imgStatus.setImageResource(R.drawable.ic_check);
-            imgStatus.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_green_dark));
+    private void updateStatusIcon(ImageView icon, boolean active) {
+        if (active) {
+            icon.setImageResource(R.drawable.ic_check);
+            icon.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_green_dark));
         } else {
-            imgStatus.setImageResource(R.drawable.ic_close);
-            imgStatus.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
+            icon.setImageResource(R.drawable.ic_close);
+            icon.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
         }
     }
 
@@ -932,13 +855,11 @@ public class MainActivity extends AppCompatActivity {
         ImageView imgStatus = view.findViewById(R.id.imgStatus);
         Button btnFix = view.findViewById(R.id.btnFix);
 
+        updateStatusIcon(imgStatus, granted);
+
         if (granted) {
-            imgStatus.setImageResource(R.drawable.ic_check);
-            imgStatus.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_green_dark));
             btnFix.setVisibility(View.GONE);
         } else {
-            imgStatus.setImageResource(R.drawable.ic_close);
-            imgStatus.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
             btnFix.setVisibility(View.VISIBLE);
         }
     }
