@@ -42,7 +42,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 //import android.app.NotificationManager;
 //import android.text.TextUtils; // Added for TextUtils
-import com.geely.lib.oneosapi.OneOSApiManager;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -123,8 +122,9 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         // Start enforcement loop
         mOverrideHandler.post(mOverrideRunnable);
 
-        // Restore last media data (Optimistic restoration)
+        // Restore last media info
         String lastTitle = prefs.getString("last_media_title", null);
+        mLastPosition = prefs.getLong("last_media_position", 0); // Restore position
         if (lastTitle != null) {
             com.geely.lib.oneosapi.mediacenter.bean.MediaData restorationData = new com.geely.lib.oneosapi.mediacenter.bean.MediaData();
             restorationData.name = lastTitle;
@@ -176,8 +176,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
-        // Initialize OneOS API
-        OneOSApiManager.getInstance().init(this);
         // Delay navigation monitoring init to allow service binding
 
     }
@@ -1636,6 +1634,14 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         // Save position
         mLastPosition = position;
+
+        // Persist position for cold start restoration
+        mOverrideHandler.post(() -> {
+            getSharedPreferences("navitool_prefs", MODE_PRIVATE)
+                    .edit()
+                    .putLong("last_media_position", position)
+                    .apply();
+        });
 
         // If state is unknown, assume playing if getting position updates
         if (mLastPlaybackState == android.media.session.PlaybackState.STATE_NONE) {
