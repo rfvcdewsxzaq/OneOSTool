@@ -487,24 +487,14 @@ public class MainActivity extends AppCompatActivity {
 
         // AVM Debug Buttons
         View layoutDebugAvmButtons = findViewById(R.id.layoutDebugAvmButtons);
-        Button btnForceAvmLeftTimed = findViewById(R.id.btnForceAvmLeftTimed);
-        Button btnForceAvmRightTimed = findViewById(R.id.btnForceAvmRightTimed);
+        Button btnForceAvmTimed = findViewById(R.id.btnForceAvmTimed);
 
-        if (btnForceAvmLeftTimed != null) {
-            btnForceAvmLeftTimed.setOnClickListener(v -> {
+        if (btnForceAvmTimed != null) {
+            btnForceAvmTimed.setOnClickListener(v -> {
                 Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-                intent.putExtra("type", "avm_left_timed");
+                intent.putExtra("type", "avm_timed");
                 sendBroadcast(intent);
-                DebugLogger.toast(this, "测试：左后3D视角 (3秒)");
-            });
-        }
-
-        if (btnForceAvmRightTimed != null) {
-            btnForceAvmRightTimed.setOnClickListener(v -> {
-                Intent intent = new Intent("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
-                intent.putExtra("type", "avm_right_timed");
-                sendBroadcast(intent);
-                DebugLogger.toast(this, "测试：右后3D视角 (3秒)");
+                DebugLogger.toast(this, "测试：开启360(3秒)");
             });
         }
 
@@ -570,11 +560,9 @@ public class MainActivity extends AppCompatActivity {
                 int brightnessNight = intent.getIntExtra("prop_brightness_night", -1);
                 int leftTurn = intent.getIntExtra("prop_turn_left", 0);
                 int rightTurn = intent.getIntExtra("prop_turn_right", 0);
-                int avmView = intent.getIntExtra("prop_avm_view", -1);
-                int avmAngle = intent.getIntExtra("prop_avm_angle", -1);
 
                 updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
-                        rightTurn, avmView, avmAngle);
+                        rightTurn);
             }
         }
     };
@@ -703,13 +691,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateSensorStatus(int dayNightThemeMode, int dayNightSensor, float lightSensor, int avmProp,
-            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn, int avmView, int avmAngle) {
+            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn) {
         TextView tvPropDayNightTheme = findViewById(R.id.tvPropDayNightTheme);
         TextView tvSensorDayNight = findViewById(R.id.tvSensorDayNight);
         TextView tvSensorSpeed = findViewById(R.id.tvSensorSpeed);
         TextView tvPropAvm = findViewById(R.id.tvPropAvm);
-        TextView tvPropAvmView = findViewById(R.id.tvPropAvmView);
-        TextView tvPropAvmAngle = findViewById(R.id.tvPropAvmAngle);
+
         TextView tvPropBrightnessDay = findViewById(R.id.tvPropBrightnessDay);
         TextView tvPropBrightnessNight = findViewById(R.id.tvPropBrightnessNight);
 
@@ -798,17 +785,6 @@ public class MainActivity extends AppCompatActivity {
             tvPropBrightnessNight.setText(valStr);
         }
 
-        if (tvPropAvmView != null) {
-            String valStr = (avmView == -1) ? getString(R.string.mode_unknown)
-                    : String.format(Locale.getDefault(), "0x%s", Integer.toHexString(avmView));
-            tvPropAvmView.setText(valStr);
-        }
-
-        if (tvPropAvmAngle != null) {
-            String valStr = (avmAngle == -1) ? getString(R.string.mode_unknown)
-                    : String.format(Locale.getDefault(), "0x%s", Integer.toHexString(avmAngle));
-            tvPropAvmAngle.setText(valStr);
-        }
     }
 
     private void sendBrightnessBroadcast(boolean isDay, int value) {

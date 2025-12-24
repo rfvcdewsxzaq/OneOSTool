@@ -180,22 +180,11 @@
                 android:layout_marginBottom="16dp">
 
                 <Button
-                    android:id="@+id/btnForceAvmLeftTimed"
-                    android:layout_width="0dp"
+                    android:id="@+id/btnForceAvmTimed"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="左后3D(3秒)"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_marginEnd="8dp"/>
-
-                <Button
-                    android:id="@+id/btnForceAvmRightTimed"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="右后3D(3秒)"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_marginStart="8dp"/>
+                    android:text="开启360(3秒)"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
             </LinearLayout>
 
             <!-- Media Notification Toggle -->
@@ -734,55 +723,7 @@
                     android:textSize="14sp"/>
             </LinearLayout>
 
-            <!-- AVM View Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="360视角:"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvPropAvmView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <!-- AVM Angle Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="3D视角角度:"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvPropAvmAngle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
 
             <!-- Brightness Control -->
             <!-- Day Brightness Control -->

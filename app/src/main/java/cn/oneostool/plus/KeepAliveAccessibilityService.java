@@ -68,6 +68,15 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private int mTargetBrightnessDay = 14;
     private int mTargetBrightnessNight = 3;
     private int mTargetBrightnessAvm = 15;
+    private final android.os.Handler mBrightnessPollHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable mBrightnessPollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            pollAndBroadcastBrightness();
+            // Schedule next poll in 100ms
+            mBrightnessPollHandler.postDelayed(this, 100);
+        }
+    };
     private android.os.Handler mOverrideHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable mOverrideRunnable = new Runnable() {
         @Override
@@ -192,6 +201,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         }
         Log.i(TAG, "Service destroying, cleaning up resources...");
         stopMonitoring();
+        mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
 
         try {
             unregisterReceiver(configChangeReceiver);
@@ -272,30 +282,23 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     }
 
     // Day/Night Mode Constants
-    private static final int FUNC_THEMEMODE_SETTING = IDayMode.SETTING_FUNC_DAYMODE_SETTING;// 0x20150100;
+    private static final int FUNC_THEMEMODE_SETTING = IDayMode.SETTING_FUNC_DAYMODE_SETTING;
     // Removed local SENSOR_TYPE_DAY_NIGHT, using ISensor.SENSOR_TYPE_DAY_NIGHT
     private static final int SENSOR_TYPE_SPEED = ISensor.SENSOR_TYPE_CAR_SPEED;
     // 0x100100;
     // Removed FUNC_REVERSE_GEAR
-    private static final int FUNC_AVM_STATUS = IPAS.PAS_FUNC_PAC_ACTIVATION;// 0x29030200;
+    private static final int FUNC_AVM_STATUS = IPAS.PAS_FUNC_PAC_ACTIVATION;
     private static final int FUNC_BRIGHTNESS_DAY = IVehicle.SETTING_FUNC_BRIGHTNESS_DAY;
     private static final int FUNC_BRIGHTNESS_NIGHT = IVehicle.SETTING_FUNC_BRIGHTNESS_NIGHT;
     private static final int FUNC_TURN_SIGNAL_LEFT = IBcm.BCM_FUNC_LIGHT_LEFT_TRUN_SIGNAL;// 0x21051100;
     private static final int FUNC_TURN_SIGNAL_RIGHT = IBcm.BCM_FUNC_LIGHT_RIGHT_TRUN_SIGNAL;// 0x21051200;
-    private static final int FUNC_AVM_VIEW_REG = IPAS.PAS_FUNC_PAC_VIEW_SELECTION;// 0x23031100; // Corrected to
-                                                                                  // PAS_FUNC_PAC_VIEW_SELECTION
-    private static final int VALUE_AVM_VIEW_REAR_LEFT_3D = IPAS.PAC_VIEW_SELECTION_REAR_LEFT_3D;// PAC_3DVIEW_POSITION_REAR_LEFT;//
-                                                                                                // ;//0x2303110c;
-    private static final int VALUE_AVM_VIEW_REAR_RIGHT_3D = IPAS.PAC_VIEW_SELECTION_REAR_RIGHT_3D;// PAC_3DVIEW_POSITION_REAR_RIGHT;//
-                                                                                                  // PAC_VIEW_SELECTION_REAR_RIGHT_3D;//0x2303110d;
-    private static final int FUNC_AVM_ANGLE_REG = IPAS.PAS_FUNC_PAC_3DVIEW_POSITION;// 0x23031200;
     private static final int ZONE_DRIVER = 1;
     private static final int ZONE_ALL = 0x80000000;
     // private static final int VALUE_THEMEMODE_DAY =
-    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_DAY;//0x20150101;
+    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_DAY;
     // private static final int VALUE_THEMEMODE_NIGHT =
-    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_NIGHT;//0x20150102;
-    private static final int VALUE_THEMEMODE_AUTO = IDayMode.DAYMODE_SETTING_BRIGHTNESS_AUTO;// 0x20150103;
+    // IDayMode.DAYMODE_SETTING_BRIGHTNESS_NIGHT;
+    private static final int VALUE_THEMEMODE_AUTO = IDayMode.DAYMODE_SETTING_BRIGHTNESS_AUTO;
     // private static final int VALUE_THEMEMODE_CUSTOM = 0x20150104;
     // private static final int VALUE_THEMEMODE_SUNRISE_AND_SUNSET = 0x20150105;
 
@@ -342,8 +345,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private int mLastThemeMode = -1; // Added for Theme Mode persistence
     private int mLastTurnSignalLeft = 0;
     private int mLastTurnSignalRight = 0;
-    private int mLastAvmView = -1;
-    private int mLastAvmAngle = -1;
 
     // Smart AVM State
     private boolean mIsSmartAvmEnabled = false;
@@ -376,18 +377,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         Log.i(TAG, "SmartAVM: Triggering AVM (Speed dropped < 30 after > 30)");
                         try {
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-
-                            // Smart View Switching Logic
-                            if (mLastTurnSignalLeft == 1) {
-                                // Updated to 2-parameter call
-                                iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_LEFT_3D);
-                                Log.i(TAG, "SmartAVM: Switching to Rear Left 3D View");
-                            } else if (mLastTurnSignalRight == 1) {
-                                // Updated to 2-parameter call
-                                iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_RIGHT_3D);
-                                Log.i(TAG, "SmartAVM: Switching to Rear Right 3D View");
-                            }
-
                             mIsSmartAvmActive = true;
                             DebugLogger.toast(this, "智能360已自动开启");
                         } catch (Exception e) {
@@ -416,33 +405,30 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         if (iCarFunction == null)
             return;
         try {
+            boolean changed = false;
+
             // Poll Day Brightness
             float brightDay = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_DAY, ZONE_DRIVER);
-            if (brightDay != -1f) {
+            if (brightDay != -1f && (int) brightDay != mLastBrightnessDayValue) {
                 mLastBrightnessDayValue = (int) brightDay;
+                changed = true;
             }
 
             // Poll Night Brightness
             float brightNight = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_NIGHT, ZONE_DRIVER);
-            if (brightNight != -1f) {
+            if (brightNight != -1f && (int) brightNight != mLastBrightnessNightValue) {
                 mLastBrightnessNightValue = (int) brightNight;
+                changed = true;
             }
 
-            // Poll AVM View & Angle (Debug)
-            // int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL);
-            int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG);
-            if (avmView != -1)
-                mLastAvmView = avmView;
-
-            // int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG, ZONE_ALL);
-            int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG);
-            if (avmAngle != -1)
-                mLastAvmAngle = avmAngle;
-
-            Log.d(TAG, "Polled Brightness - Day: " + mLastBrightnessDayValue + ", Night: " + mLastBrightnessNightValue);
-
-            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
-                    mLastAvmValue, mLastBrightnessDayValue, mLastBrightnessNightValue);
+            // Only broadcast if values changed
+            if (changed) {
+                Log.d(TAG,
+                        "Polled Brightness Changed - Day: " + mLastBrightnessDayValue + ", Night: "
+                                + mLastBrightnessNightValue);
+                broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
+                        mLastAvmValue, mLastBrightnessDayValue, mLastBrightnessNightValue);
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error polling brightness", e);
         }
@@ -466,8 +452,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         intent.putExtra("prop_brightness_night", brightnessNight);
         intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
         intent.putExtra("prop_turn_right", mLastTurnSignalRight);
-        intent.putExtra("prop_avm_view", mLastAvmView);
-        intent.putExtra("prop_avm_angle", mLastAvmAngle);
         sendBroadcast(intent);
     }
 
@@ -508,34 +492,24 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             // SENSOR_TYPE_SPEED is likely ISensor.
                             // But for properties (Reverse, AVM, Brightness), we SHOULD poll.
 
-                            // Poll AVM Status (On/Off) - 0x23030100
                             int avmStatus = iCarFunction.getFunctionValue(FUNC_AVM_STATUS, ZONE_ALL); // Try Zone 0
                             if (avmStatus != -1)
                                 mLastAvmValue = avmStatus;
 
-                            // Poll AVM View & Angle - Try Zone 0
-                            // int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL);
-                            int avmView = iCarFunction.getFunctionValue(FUNC_AVM_VIEW_REG);
-                            if (avmView != -1)
-                                mLastAvmView = avmView;
+                            // Poll Day Brightness - REMOVED (Handled by mBrightnessPollRunnable)
+                            // float brightDay =
+                            // iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_DAY, ZONE_DRIVER);
+                            // if (brightDay != -1f) {
+                            // mLastBrightnessDayValue = (int) brightDay;
+                            // }
 
-                            // int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG, ZONE_ALL);
-                            int avmAngle = iCarFunction.getFunctionValue(FUNC_AVM_ANGLE_REG);
-                            if (avmAngle != -1)
-                                mLastAvmAngle = avmAngle;
-
-                            // Poll Day Brightness
-                            float brightDay = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_DAY, ZONE_DRIVER);
-                            if (brightDay != -1f) {
-                                mLastBrightnessDayValue = (int) brightDay;
-                            }
-
-                            // Poll Night Brightness
-                            float brightNight = iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_NIGHT,
-                                    ZONE_DRIVER);
-                            if (brightNight != -1f) {
-                                mLastBrightnessNightValue = (int) brightNight;
-                            }
+                            // Poll Night Brightness - REMOVED (Handled by mBrightnessPollRunnable)
+                            // float brightNight =
+                            // iCarFunction.getCustomizeFunctionValue(FUNC_BRIGHTNESS_NIGHT,
+                            // ZONE_DRIVER);
+                            // if (brightNight != -1f) {
+                            // mLastBrightnessNightValue = (int) brightNight;
+                            // }
 
                             // Poll Day/Night Sensor (User request: polling every 1s)
                             if (iSensor != null) {
@@ -566,8 +540,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         intent.putExtra("prop_brightness_night", mLastBrightnessNightValue);
                         intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
                         intent.putExtra("prop_turn_right", mLastTurnSignalRight);
-                        intent.putExtra("prop_avm_view", mLastAvmView);
-                        intent.putExtra("prop_avm_angle", mLastAvmAngle);
                         sendBroadcast(intent);
 
                         // Enforcement logic removed as per user request to replace "Force Auto" with
@@ -712,6 +684,10 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
                     Log.i(TAG, "Car AdaptAPI initialized successfully");
 
+                    // Start Brightness Polling (100ms)
+                    mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
+                    mBrightnessPollHandler.post(mBrightnessPollRunnable);
+
                     if (iSensor != null) {
                         registerSensorListeners();
                     }
@@ -800,10 +776,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             Log.d(TAG, "AVM Status Changed: " + value);
                             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
                                     value, mLastBrightnessDayValue, mLastBrightnessNightValue);
-                        } else if (functionId == FUNC_BRIGHTNESS_DAY || functionId == FUNC_BRIGHTNESS_NIGHT) {
-                            Log.d(TAG, "Brightness Changed (Int): " + value + " for ID: " + functionId);
-                            // Always poll both to ensure consistency and avoid flickering
-                            pollAndBroadcastBrightness();
+                            // PollAndBroadcast is now handled by timed runnable
+                            // Log.d(TAG, "Brightness Changed (Int): " + value + " for ID: " + functionId);
                         } else if (functionId == FUNC_TURN_SIGNAL_LEFT) {
                             Log.d(TAG, "Left Turn Signal Changed: " + value);
                             mLastTurnSignalLeft = value;
@@ -816,23 +790,14 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
                                     mLastBrightnessDayValue, mLastBrightnessNightValue);
                             checkSmartAvmTrigger(mLastSpeedSensorValue);
-                        } else if (functionId == FUNC_AVM_VIEW_REG) {
-                            mLastAvmView = value;
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
-                        } else if (functionId == FUNC_AVM_ANGLE_REG) {
-                            mLastAvmAngle = value;
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
                         }
                     }
 
                     @Override
                     public void onCustomizeFunctionValueChanged(int functionId, int zone, float value) {
-                        if (functionId == FUNC_BRIGHTNESS_DAY || functionId == FUNC_BRIGHTNESS_NIGHT) {
-                            Log.d(TAG, "Brightness Changed (Float): " + value + " for ID: " + functionId);
-                            pollAndBroadcastBrightness();
-                        }
+                        // Monitor only, handled by polling
+                        // Log.d(TAG, "Brightness Changed (Float): " + value + " for ID: " +
+                        // functionId);
                     }
 
                     @Override
@@ -859,8 +824,6 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 iCarFunction.registerFunctionValueWatcher(FUNC_BRIGHTNESS_NIGHT, watcher);
                 iCarFunction.registerFunctionValueWatcher(FUNC_TURN_SIGNAL_LEFT, watcher);
                 iCarFunction.registerFunctionValueWatcher(FUNC_TURN_SIGNAL_RIGHT, watcher);
-                iCarFunction.registerFunctionValueWatcher(FUNC_AVM_VIEW_REG, watcher);
-                iCarFunction.registerFunctionValueWatcher(FUNC_AVM_ANGLE_REG, watcher);
                 // FUNC_DAYMODE_SETTING listener removed as per user request (not supported)
 
                 Log.i(TAG, "Function watchers registered (AVM, Brightness)");
@@ -937,7 +900,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 }
             } else if ("cn.oneostool.plus.ACTION_SET_BRIGHTNESS_OVERRIDE_CONFIG".equals(action)) {
                 mIsOverrideEnabled = intent.getBooleanExtra("enabled", false);
-                mTargetBrightnessDay = intent.getIntExtra("day", 5);
+                mTargetBrightnessDay = intent.getIntExtra("day", 14);
                 mTargetBrightnessNight = intent.getIntExtra("night", 3);
                 mTargetBrightnessAvm = intent.getIntExtra("avm", 15);
                 Log.d(TAG, "Override Config Updated: " + mIsOverrideEnabled + " D:" + mTargetBrightnessDay + " N:"
@@ -949,30 +912,9 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         Log.i(TAG, "Test Signal: " + type);
                         if ("avm".equals(type)) {
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                        } else if ("avm_left_timed".equals(type)) {
-                            // Test Left Rear 3D View
+                        } else if ("avm_timed".equals(type)) {
+                            // Test Open AVM (3s timeout)
                             iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                            // Slight delay to ensure AVM is up? Or direct call. Trying direct call
-                            // sequence.
-                            // iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL,
-                            // VALUE_AVM_VIEW_REAR_LEFT_3D);
-                            iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_LEFT_3D);
-
-                            mHandler.postDelayed(() -> {
-                                try {
-                                    if (iCarFunction != null) {
-                                        iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 0);
-                                    }
-                                } catch (Exception e) {
-                                    Log.e(TAG, "Error closing AVM in timed test", e);
-                                }
-                            }, 3000);
-                        } else if ("avm_right_timed".equals(type)) {
-                            // Test Right Rear 3D View
-                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                            // iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, ZONE_ALL,
-                            // VALUE_AVM_VIEW_REAR_RIGHT_3D);
-                            iCarFunction.setFunctionValue(FUNC_AVM_VIEW_REG, VALUE_AVM_VIEW_REAR_RIGHT_3D);
 
                             mHandler.postDelayed(() -> {
                                 try {
@@ -1568,8 +1510,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
                         // DEBUG: Toast on Main Thread
                         mOverrideHandler.post(() -> {
-                            DebugLogger.toast(KeepAliveAccessibilityService.this,
-                                    "PlayState: Src=" + source + " State=" + state);
+                            //DebugLogger.toast(KeepAliveAccessibilityService.this, "PlayState: Src=" + source + " State=" + state);
                         });
 
                         // Source Filtering for State
