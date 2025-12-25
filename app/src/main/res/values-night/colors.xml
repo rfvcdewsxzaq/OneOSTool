@@ -3,6 +3,9 @@
     <!-- Component Colors (Night) -->
     <color name="color_card_background">#2C2C2C</color>
     <color name="color_spinner_background">#3C3C3C</color>
-    <color name="color_spinner_stroke">#555555</color>
+    <color name="color_spinner_stroke">#909090</color>
     <color name="color_header_background">#00363A</color>
+    <color name="color_text_unselected">#CCCCCC</color>
+    <color name="color_tab_selected_bg">@color/cyan_700</color>
+    <color name="color_seekbar_track">#616161</color>
 </resources>

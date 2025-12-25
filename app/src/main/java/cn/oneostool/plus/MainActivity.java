@@ -156,80 +156,48 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Vehicle Theme Mode Settings
-        Spinner spinnerThemeMode = findViewById(R.id.spinnerThemeMode);
+        com.google.android.material.button.MaterialButtonToggleGroup toggleGroupThemeMode = findViewById(R.id.toggleGroupThemeMode);
 
-        // Theme Mode Options
-        String[] themeOptions = {
-                getString(R.string.theme_mode_auto),
-                getString(R.string.theme_mode_auto_sunset),
-                getString(R.string.theme_mode_day),
-                getString(R.string.theme_mode_night)
-        };
-        // Option values corresponding to indices:
-        // 0: Auto (CHECK_LIGHT_SENSOR? No, it's VALUE_THEMEMODE_AUTO)
-        // 1: Day
-        // 2: Night
-        // 3: Auto (Sunset)
-        // Note: VALUE_THEMEMODE_AUTO = 0x20150103
-        // VALUE_THEMEMODE_DAY = 0x20150101
-        // VALUE_THEMEMODE_NIGHT = 0x20150102
-        // VALUE_THEMEMODE_SUNRISE_AND_SUNSET = 0x20150105
-
-        ArrayAdapter<String> themeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
-                themeOptions);
-        themeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerThemeMode.setAdapter(themeAdapter);
-
-        // Track user interaction start
-        spinnerThemeMode.setOnTouchListener((v, event) -> {
-            mLastInteractionTime = System.currentTimeMillis();
-            return false;
-        });
-
-        // Restore saved selection or default to Auto (0)
+        // Restore saved selection
         int savedThemeIdx = prefs.getInt("vehicle_theme_mode_index", 0);
-        spinnerThemeMode.setSelection(savedThemeIdx);
+        int checkedId = R.id.btnThemeAuto;
+        switch (savedThemeIdx) {
+            case 0: checkedId = R.id.btnThemeAuto; break;
+            case 1: checkedId = R.id.btnThemeSunset; break;
+            case 2: checkedId = R.id.btnThemeDay; break;
+            case 3: checkedId = R.id.btnThemeNight; break;
+        }
+        toggleGroupThemeMode.check(checkedId);
 
-        spinnerThemeMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (mIsUpdatingSpinner)
-                    return; // Skip if updating from code
+        toggleGroupThemeMode.addOnButtonCheckedListener((group, checkedId1, isChecked) -> {
+            if (!isChecked) return; // Only handle the newly checked button
 
-                // Save selection
-                prefs.edit().putInt("vehicle_theme_mode_index", position).apply();
+            int position = 0;
+            int modeValue = 0x20150103; // Default Auto
 
-                // Map index to value
-                int modeValue = 0; // Default Auto
-                switch (position) {
-                    case 0:
-                        modeValue = 0x20150103;
-                        break; // Auto
-                    case 1:
-                        modeValue = 0x20150105;
-                        break; // Sunrise/Sunset
-                    case 2:
-                        modeValue = 0x20150101;
-                        break; // Day
-                    case 3:
-                        modeValue = 0x20150102;
-                        break; // Night
-                }
-
-                // Send Broadcast to Service to set mode
-                Intent intent = new Intent("cn.oneostool.plus.ACTION_SET_THEME_MODE");
-                intent.putExtra("mode_value", modeValue);
-                sendBroadcast(intent);
-                /*
-                 * DebugLogger.toast(MainActivity.this, "Set Theme Mode: " +
-                 * Integer.toHexString(modeValue));
-                 */
-                mLastInteractionTime = System.currentTimeMillis(); // Reset cooldown after selection
+            if (checkedId1 == R.id.btnThemeAuto) {
+                position = 0;
+                modeValue = 0x20150103;
+            } else if (checkedId1 == R.id.btnThemeSunset) {
+                position = 1;
+                modeValue = 0x20150105;
+            } else if (checkedId1 == R.id.btnThemeDay) {
+                position = 2;
+                modeValue = 0x20150101;
+            } else if (checkedId1 == R.id.btnThemeNight) {
+                position = 3;
+                modeValue = 0x20150102;
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            // Save selection
+            prefs.edit().putInt("vehicle_theme_mode_index", position).apply();
+
+            // Send Broadcast to Service to set mode
+            Intent intent = new Intent("cn.oneostool.plus.ACTION_SET_THEME_MODE");
+            intent.putExtra("mode_value", modeValue);
+            sendBroadcast(intent);
+            
+            DebugLogger.toast(this, getString(R.string.sent_autonavi_broadcast, modeValue));
         });
 
         // Smart AVM Toggle

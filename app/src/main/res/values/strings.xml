@@ -84,6 +84,8 @@
     <string name="mode_day">浅色</string>
     <string name="mode_night">深色</string>
     <string name="mode_sunrise_sunset">自动(日出日落)</string>
+    <string name="mode_auto_multiline">光线感应</string>
+    <string name="mode_sunset_multiline">日出日落</string>
     <string name="mode_unknown">未知</string>
     <string name="value_unknown">未知</string>
     

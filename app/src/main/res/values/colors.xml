@@ -17,6 +17,9 @@
     <!-- Component Colors (Day) -->
     <color name="color_card_background">#F2F2F2</color>
     <color name="color_spinner_background">#F5F5F5</color>
-    <color name="color_spinner_stroke">#E0E0E0</color>
+    <color name="color_spinner_stroke">#B0B0B0</color>
     <color name="color_header_background">@color/cyan_700</color>
+    <color name="color_text_unselected">#666666</color>
+    <color name="color_tab_selected_bg">@color/cyan_500</color>
+    <color name="color_seekbar_track">#E0E0E0</color>
 </resources>
