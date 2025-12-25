@@ -11,9 +11,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/cyan_700"
+        android:background="@color/color_header_background"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="10dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -34,6 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/debug_mode"
+                android:textSize="20sp"
                 android:textColor="@android:color/white"
                 android:theme="@style/ThemeOverlay.AppCompat.Dark"
                 android:layout_alignParentEnd="true"
@@ -47,7 +49,7 @@
             android:text="@string/app_credit"
             android:textSize="14sp"
             android:textColor="#E0E0E0"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="4dp"/>
 
     </LinearLayout>
 
@@ -80,14 +82,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/auto_switch_theme"
-                    android:textSize="16sp"
+                    android:textSize="20sp"
                     android:textColor="?android:attr/textColorPrimary"/>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
@@ -125,26 +130,33 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
             </LinearLayout>
 
+            <!-- Debug Launch Button -->
+
+
             <!-- Vehicle Theme Mode Settings -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/vehicle_theme_settings"
-                    android:textSize="16sp"
+                    android:textSize="20sp"
                     android:textColor="?android:attr/textColorPrimary"/>
 
                 <Spinner
                     android:id="@+id/spinnerThemeMode"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_spinner"
                     android:minWidth="150dp"/>
             </LinearLayout>
 
@@ -154,7 +166,10 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="0dp"
@@ -162,7 +177,7 @@
                     android:layout_weight="1"
                     android:text="智能360辅助"
                     android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="20sp" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchSmartAvm"
@@ -193,14 +208,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="车机自带在线音乐媒体通知"
-                    android:textSize="16sp"
+                    android:textSize="20sp"
                     android:textColor="?android:attr/textColorPrimary"/>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
@@ -217,14 +235,17 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/activate_steering_wheel"
-                    android:textSize="16sp"
+                    android:textSize="20sp"
                     android:textColor="?android:attr/textColorPrimary"/>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
@@ -274,137 +295,217 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/override_brightness_title"
-                    android:textSize="16sp"
-                    android:textColor="?android:attr/textColorPrimary"/>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchOverrideBrightness"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
-
-            <!-- Brightness Override Controls (Day/Night/AVM) -->
-            <LinearLayout
-                android:id="@+id/layoutOverrideControls"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:padding="16dp">
 
-                <!-- Day Target -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingVertical="4dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/override_brightness_day"
-                            android:textSize="14sp"
-                            android:textColor="?android:attr/textColorSecondary"/>
-                        <TextView
-                            android:id="@+id/tvOverrideDayValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="5"
-                            android:layout_marginStart="8dp"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="14sp"/>
-                    </LinearLayout>
-                    <SeekBar
-                        android:id="@+id/seekBarOverrideDay"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="15"
-                        android:min="1"
-                        android:progress="5"/>
+                        android:layout_weight="1"
+                        android:text="@string/override_brightness_title"
+                        android:textSize="20sp"
+                        android:textColor="?android:attr/textColorPrimary"/>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchOverrideBrightness"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
 
-                <!-- Night Target -->
+                <!-- Brightness Override Controls (Day/Night/AVM) -->
                 <LinearLayout
+                    android:id="@+id/layoutOverrideControls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingVertical="4dp">
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone">
+
+                    <!-- Day Target -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="12dp"
+                        android:paddingVertical="4dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/override_brightness_night"
-                            android:textSize="14sp"
-                            android:textColor="?android:attr/textColorSecondary"/>
-                        <TextView
-                            android:id="@+id/tvOverrideNightValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="3"
-                            android:layout_marginStart="8dp"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="14sp"/>
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/override_brightness_day"
+                                android:textSize="18sp"
+                                android:textColor="?android:attr/textColorSecondary"/>
+                            <TextView
+                                android:id="@+id/tvOverrideDayValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="5"
+                                android:layout_marginStart="8dp"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                        
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="16dp">
+                            <!-- Grey Background Capsule -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_track"/>
+                            
+                            <!-- Blue Progress Fill (Width controlled by code) -->
+                            <View
+                                android:id="@+id/viewOverrideDayProgress"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_fill"/>
+                                
+                            <!-- Transparent SeekBar for interaction -->
+                            <SeekBar
+                                android:id="@+id/seekBarOverrideDay"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:max="15"
+                                android:min="1"
+                                android:progress="5"
+                                android:progressDrawable="@null"
+                                android:thumb="@drawable/seekbar_thumb"
+                                android:background="@null"
+                                android:splitTrack="false"
+                                android:paddingStart="8dp"
+                                android:paddingEnd="8dp"/>
+                        </FrameLayout>
                     </LinearLayout>
-                    <SeekBar
-                        android:id="@+id/seekBarOverrideNight"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="15"
-                        android:min="1"
-                        android:progress="3"/>
-                </LinearLayout>
 
-                <!-- AVM Target -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingVertical="4dp">
+                    <!-- Night Target -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="12dp"
+                        android:paddingVertical="4dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/override_brightness_avm"
-                            android:textSize="14sp"
-                            android:textColor="?android:attr/textColorSecondary"/>
-                        <TextView
-                            android:id="@+id/tvOverrideAvmValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="15"
-                            android:layout_marginStart="8dp"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="14sp"/>
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/override_brightness_night"
+                                android:textSize="18sp"
+                                android:textColor="?android:attr/textColorSecondary"/>
+                            <TextView
+                                android:id="@+id/tvOverrideNightValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="3"
+                                android:layout_marginStart="8dp"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                        
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="16dp">
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_track"/>
+                            <View
+                                android:id="@+id/viewOverrideNightProgress"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_fill"/>
+                            <SeekBar
+                                android:id="@+id/seekBarOverrideNight"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:max="15"
+                                android:min="1"
+                                android:progress="3"
+                                android:progressDrawable="@null"
+                                android:thumb="@drawable/seekbar_thumb"
+                                android:background="@null"
+                                android:splitTrack="false"
+                                android:paddingStart="8dp"
+                                android:paddingEnd="8dp"/>
+                        </FrameLayout>
                     </LinearLayout>
-                    <SeekBar
-                        android:id="@+id/seekBarOverrideAvm"
+
+                    <!-- AVM Target -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:max="15"
-                        android:min="1"
-                        android:progress="15"/>
-                </LinearLayout>
+                        android:orientation="vertical"
+                        android:layout_marginBottom="12dp"
+                        android:paddingVertical="4dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/override_brightness_avm"
+                                android:textSize="18sp"
+                                android:textColor="?android:attr/textColorSecondary"/>
+                            <TextView
+                                android:id="@+id/tvOverrideAvmValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="15"
+                                android:layout_marginStart="8dp"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="18sp"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                        
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="16dp">
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_track"/>
+                            <View
+                                android:id="@+id/viewOverrideAvmProgress"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_seekbar_fill"/>
+                            <SeekBar
+                                android:id="@+id/seekBarOverrideAvm"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:max="15"
+                                android:min="1"
+                                android:progress="15"
+                                android:progressDrawable="@null"
+                                android:thumb="@drawable/seekbar_thumb"
+                                android:background="@null"
+                                android:splitTrack="false"
+                                android:paddingStart="8dp"
+                                android:paddingEnd="8dp"/>
+                        </FrameLayout>
+                    </LinearLayout>
 
+                </LinearLayout>
             </LinearLayout>
 
 
@@ -413,90 +514,102 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp">
+                    android:orientation="vertical"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_function_item"
+                    android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/wechat_button_function"
-                        android:textSize="16sp"
-                        android:textColor="?android:attr/textColorPrimary"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchWechatButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/wechat_button_function"
+                            android:textSize="20sp"
+                            android:textColor="?android:attr/textColorPrimary"/>
 
-                <!-- WeChat Short Press Function -->
-                <LinearLayout
-                    android:id="@+id/layoutWechatShortPress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="24dp"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone">
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchWechatButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- WeChat Short Press Function -->
+                    <LinearLayout
+                        android:id="@+id/layoutWechatShortPress"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/wechat_short_press"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:layout_marginEnd="8dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="0dp"
+                        android:layout_marginTop="20dp"
+                        android:visibility="gone">
 
-                    <Spinner
-                        android:id="@+id/spinnerShortPressAction"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="120dp"/>
-                    
-                    <Spinner
-                        android:id="@+id/spinnerShortPressApp"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:visibility="gone"/>
-                </LinearLayout>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/wechat_short_press"
+                            android:textSize="16sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:layout_marginEnd="8dp"/>
 
-                <!-- WeChat Long Press Function -->
-                <LinearLayout
-                    android:id="@+id/layoutWechatLongPress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="24dp"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone">
+                        <Spinner
+                            android:id="@+id/spinnerShortPressAction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_spinner"
+                            android:minWidth="120dp"/>
+                        
+                        <Spinner
+                            android:id="@+id/spinnerShortPressApp"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_spinner"
+                            android:layout_marginStart="8dp"
+                            android:visibility="gone"/>
+                    </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- WeChat Long Press Function -->
+                    <LinearLayout
+                        android:id="@+id/layoutWechatLongPress"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/wechat_long_press"
-                        android:textSize="14sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:layout_marginEnd="8dp"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="0dp"
+                        android:layout_marginTop="20dp"
+                        android:visibility="gone">
 
-                    <Spinner
-                        android:id="@+id/spinnerLongPressAction"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="120dp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/wechat_long_press"
+                            android:textSize="16sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:layout_marginEnd="8dp"/>
 
-                    <Spinner
-                        android:id="@+id/spinnerLongPressApp"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:visibility="gone"/>
+                        <Spinner
+                            android:id="@+id/spinnerLongPressAction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_spinner"
+                            android:minWidth="120dp"/>
+
+                        <Spinner
+                            android:id="@+id/spinnerLongPressApp"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_spinner"
+                            android:layout_marginStart="8dp"
+                            android:visibility="gone"/>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Auto Start Apps Group -->
@@ -504,9 +617,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_function_item"
+                    android:padding="16dp">
 
-                    <!-- Top Row: Label, Buttons, Switch -->
+                    <!-- Top Row: Label and Main Switch -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -518,34 +633,8 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/auto_start_apps"
-                            android:textSize="16sp"
+                            android:textSize="20sp"
                             android:textColor="?android:attr/textColorPrimary"/>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchReturnToHome"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/return_to_home"
-                            android:visibility="gone"
-                            android:layout_marginEnd="8dp"/>
-
-                        <Button
-                            android:id="@+id/btnTestLaunch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Test"
-                            android:visibility="gone"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
-                        <ImageButton
-                            android:id="@+id/btnAddApp"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@drawable/ic_add"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:layout_marginEnd="16dp"
-                            android:visibility="gone"/>
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchAutoStartApps"
@@ -561,7 +650,63 @@
                         android:orientation="vertical"
                         android:visibility="gone" />
 
+                    <!-- Secondary Row: Controls (Return Home, Test, Add) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:id="@+id/tvReturnToHome"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/return_to_home"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:visibility="gone"
+                            android:layout_marginEnd="8dp"/>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchReturnToHome"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone"
+                            android:layout_marginEnd="16dp"/>
+
+                        <Space
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"/>
+                            
+                        <ImageButton
+                            android:id="@+id/btnAddApp"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_add"
+                            android:background="?android:attr/selectableItemBackgroundBorderless"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+
                 </LinearLayout>
+
+            <!-- Debug Launch Button (Relocated) -->
+            <LinearLayout
+                android:id="@+id/layoutDebugLaunch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                
+                <Button
+                    android:id="@+id/btnTestLaunch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="测试启动"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            </LinearLayout>
             </LinearLayout>
         </ScrollView>
 
@@ -585,165 +730,162 @@
                 android:orientation="vertical"
                 android:animateLayoutChanges="true">
 
-            <!-- Sensor Status Group -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/sensor_title"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:textColor="?android:attr/textColorPrimary"/>
-
-            <!-- Day/Night Theme -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/prop_day_night_theme"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvPropDayNightTheme"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <!-- Day/Night Sensor -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/sensor_day_night"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvSensorDayNight"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <!-- Speed Sensor -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/sensor_speed_status"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvSensorSpeed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-
-
-            <!-- AVM Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/prop_avm"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvPropAvm"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-            <!-- Turn Signal Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/prop_turn_signal"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"/>
-
-                <TextView
-                    android:id="@+id/tvTurnSignal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/mode_unknown"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"/>
-            </LinearLayout>
-
-
-
-            <!-- Brightness Control -->
-            <!-- Day Brightness Control -->
+            <!-- Data Monitor Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
+                android:background="@drawable/bg_function_item"
+                android:padding="16dp">
 
+                <!-- Sensor Status Title -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sensor_title"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="?android:attr/textColorPrimary"/>
+
+                <!-- Day/Night Theme -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/prop_day_night_theme"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvPropDayNightTheme"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/mode_unknown"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <!-- Day/Night Sensor -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sensor_day_night"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvSensorDayNight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/mode_unknown"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <!-- Speed Sensor -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sensor_speed_status"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvSensorSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/mode_unknown"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <!-- AVM Status -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/prop_avm"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvPropAvm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/mode_unknown"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <!-- Turn Signal Status -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/prop_turn_signal"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+
+                    <TextView
+                        android:id="@+id/tvTurnSignal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/mode_unknown"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="15sp"/>
+                </LinearLayout>
+
+                <!-- Brightness Control -->
                 <LinearLayout 
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/prop_brightness_day"
-                        android:textSize="14sp"
+                        android:textSize="15sp"
                         android:textColor="?android:attr/textColorSecondary"/>
 
                     <TextView
@@ -753,29 +895,21 @@
                         android:text="@string/mode_unknown"
                         android:layout_marginStart="8dp"
                         android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="14sp"/>
+                        android:textSize="15sp"/>
                 </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Night Brightness Control -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="8dp">
 
                 <LinearLayout 
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/prop_brightness_night"
-                        android:textSize="14sp"
+                        android:textSize="15sp"
                         android:textColor="?android:attr/textColorSecondary"/>
 
                     <TextView
@@ -785,122 +919,111 @@
                         android:text="@string/mode_unknown"
                         android:layout_marginStart="8dp"
                         android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="14sp"/>
+                        android:textSize="15sp"/>
                 </LinearLayout>
 
-            </LinearLayout>
-
-            <!-- Media Info Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="8dp"
-                android:paddingHorizontal="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/prop_media_info"
-                    android:textSize="14sp"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:layout_marginBottom="8dp"/>
-
-                <LinearLayout 
+                <!-- Media Info Status -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    
-                    <ImageView
-                        android:id="@+id/imgAlbumArt"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:src="@android:drawable/ic_menu_gallery"
-                        android:scaleType="centerCrop"
-                        android:layout_marginEnd="12dp"/>
+                    android:orientation="vertical"
+                    android:paddingVertical="5dp"
+                    android:paddingHorizontal="8dp">
 
-                    <LinearLayout
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/prop_media_info"
+                        android:textSize="15sp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:layout_marginBottom="8dp"/>
+
+                    <LinearLayout 
                         android:layout_width="match_parent"
-                        android:layout_height="72dp"
-                        android:orientation="vertical"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
                         android:gravity="center_vertical">
+                        
+                        <ImageView
+                            android:id="@+id/imgAlbumArt"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@android:drawable/ic_menu_gallery"
+                            android:scaleType="centerCrop"
+                            android:layout_marginEnd="12dp"/>
 
-                        <!-- Line 1: Song Title -->
-                        <TextView
-                            android:id="@+id/tvMediaTitle"
+                        <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/mode_unknown"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:singleLine="true"
-                            android:ellipsize="marquee"
-                            android:marqueeRepeatLimit="marquee_forever"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true"
-                            android:gravity="center_vertical|start"/>
+                            android:layout_height="64dp"
+                            android:orientation="vertical"
+                            android:gravity="center_vertical">
 
-                        <!-- Line 2: Artist -->
-                        <TextView
-                            android:id="@+id/tvMediaArtist"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:text="@string/mode_unknown"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="14sp"
-                            android:singleLine="true"
-                            android:ellipsize="marquee"
-                            android:marqueeRepeatLimit="marquee_forever"
-                            android:focusable="true"
-                            android:focusableInTouchMode="true"
-                            android:gravity="center_vertical|start"/>
+                            <!-- Line 1: Song Title -->
+                            <TextView
+                                android:id="@+id/tvMediaTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/mode_unknown"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:gravity="center_vertical|start"/>
 
-                        <!-- Line 3: Time / Duration -->
-                        <TextView
-                            android:id="@+id/tvMediaPosition"
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:text="--:-- / --:--"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="12sp"
-                            android:singleLine="true"
-                            android:gravity="center_vertical|start"/>
+                            <!-- Line 2: Artist -->
+                            <TextView
+                                android:id="@+id/tvMediaArtist"
+                                android:layout_width="match_parent"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/mode_unknown"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:textSize="12sp"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:gravity="center_vertical|start"/>
 
+                            <!-- Line 3: Time / Duration -->
+                            <TextView
+                                android:id="@+id/tvMediaPosition"
+                                android:layout_width="match_parent"
+                                android:layout_height="0dp"
+                                android:layout_weight="1"
+                                android:text="--:-- / --:--"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:textSize="12sp"
+                                android:singleLine="true"
+                                android:gravity="center_vertical|start"/>
+
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
-
             </LinearLayout>
 
 
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                android:layout_marginVertical="16dp"/>
-
-            <!-- Top Row: Permission Status Header -->
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="权限状态"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp"
-                android:textColor="?android:attr/textColorPrimary"/>
 
             <!-- Permission Status List -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:background="@drawable/bg_function_item"
+                android:padding="16dp"
+                android:layout_marginTop="16dp">
+
+                <!-- Permission Status Header -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="权限状态"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="?android:attr/textColorPrimary"/>
 
 
                 <!-- Media Key Service Status -->
@@ -910,10 +1033,9 @@
                     android:layout_height="wrap_content"
                     android:background="?android:attr/selectableItemBackground"
                     android:gravity="center_vertical"
-                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
+                    android:paddingVertical="5dp">
 
                     <ImageView
                         android:id="@+id/imgMediaKeyServiceIcon"
@@ -921,7 +1043,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:contentDescription="@string/media_key_service_title"
-                        android:src="@drawable/ic_close" />
+                        android:src="@drawable/ic_status_error" />
 
                     <TextView
                         android:id="@+id/tvMediaKeyServiceStatus"
@@ -940,17 +1062,16 @@
                     android:layout_height="wrap_content"
                     android:background="?android:attr/selectableItemBackground"
                     android:gravity="center_vertical"
-                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
+                    android:paddingVertical="5dp">
 
                     <ImageView
                         android:id="@+id/imgMediaInfoServiceIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_close" />
+                        android:src="@drawable/ic_status_error" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -970,10 +1091,9 @@
                     android:layout_height="wrap_content"
                     android:background="?android:attr/selectableItemBackground"
                     android:gravity="center_vertical"
-                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp">
+                    android:paddingVertical="5dp">
 
                     <ImageView
                         android:id="@+id/imgStatus"
@@ -981,7 +1101,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/ic_close" />
+                        android:src="@drawable/ic_status_error" />
 
                     <TextView
                         android:id="@+id/txtPermissionName"
@@ -998,7 +1118,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/btn_fix"
-                        android:textColor="@color/cyan_700" />
+                        android:textColor="@color/cyan_700"
+                        android:minHeight="0dp"
+                        android:minWidth="0dp"
+                        android:paddingVertical="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:visibility="gone" />
                 </LinearLayout>
 
 

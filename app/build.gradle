@@ -33,6 +33,12 @@ android {
         aidl true
         buildConfig true
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = new Date().format("MM.dd HH-mm-ss") + " OneOSTool-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 dependencies {

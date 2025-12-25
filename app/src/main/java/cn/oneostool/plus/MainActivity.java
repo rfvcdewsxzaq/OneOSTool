@@ -287,6 +287,21 @@ public class MainActivity extends AppCompatActivity {
         int savedNight = prefs.getInt("override_night_value", 3);
         int savedAvm = prefs.getInt("override_avm_value", 15);
 
+        // Views for custom progress bars
+        final View viewOverrideDayProgress = findViewById(R.id.viewOverrideDayProgress);
+        final View viewOverrideNightProgress = findViewById(R.id.viewOverrideNightProgress);
+        final View viewOverrideAvmProgress = findViewById(R.id.viewOverrideAvmProgress);
+
+        // Define update helper
+        final Runnable updateProgress = new Runnable() {
+            @Override
+            public void run() {
+                updateProgressView(sbOverrideDay, viewOverrideDayProgress);
+                updateProgressView(sbOverrideNight, viewOverrideNightProgress);
+                updateProgressView(sbOverrideAvm, viewOverrideAvmProgress);
+            }
+        };
+
         switchOverride.setChecked(isOverrideEnabled);
         layoutOverrideControls.setVisibility(isOverrideEnabled ? View.VISIBLE : View.GONE);
         sbOverrideDay.setProgress(savedDay);
@@ -296,6 +311,9 @@ public class MainActivity extends AppCompatActivity {
         tvOverrideNight.setText(String.valueOf(savedNight));
         tvOverrideAvm.setText(String.valueOf(savedAvm));
 
+        // Initial update after layout
+        sbOverrideDay.post(updateProgress);
+
         // Initial broadcast
         if (isOverrideEnabled) {
             sendOverrideConfig(true, savedDay, savedNight, savedAvm);
@@ -304,6 +322,10 @@ public class MainActivity extends AppCompatActivity {
         switchOverride.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("override_brightness_enabled", isChecked).apply();
             layoutOverrideControls.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            if (isChecked) {
+                // Ensure views are updated when becoming visible
+                sbOverrideDay.post(updateProgress);
+            }
             sendOverrideConfig(isChecked,
                     sbOverrideDay.getProgress(),
                     sbOverrideNight.getProgress(),
@@ -313,19 +335,18 @@ public class MainActivity extends AppCompatActivity {
         SeekBar.OnSeekBarChangeListener overrideListener = new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (!fromUser)
-                    return;
-
-                int day = sbOverrideDay.getProgress();
-                int night = sbOverrideNight.getProgress();
-                int avm = sbOverrideAvm.getProgress();
-
-                if (seekBar == sbOverrideDay)
+                if (seekBar == sbOverrideDay) {
                     tvOverrideDay.setText(String.valueOf(progress));
-                if (seekBar == sbOverrideNight)
+                    updateProgressView(sbOverrideDay, viewOverrideDayProgress);
+                }
+                if (seekBar == sbOverrideNight) {
                     tvOverrideNight.setText(String.valueOf(progress));
-                if (seekBar == sbOverrideAvm)
+                    updateProgressView(sbOverrideNight, viewOverrideNightProgress);
+                }
+                if (seekBar == sbOverrideAvm) {
                     tvOverrideAvm.setText(String.valueOf(progress));
+                    updateProgressView(sbOverrideAvm, viewOverrideAvmProgress);
+                }
             }
 
             @Override
@@ -512,6 +533,20 @@ public class MainActivity extends AppCompatActivity {
         if (layoutDebugAvmButtons != null) {
             layoutDebugAvmButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         }
+        
+        View layoutDebugLaunch = findViewById(R.id.layoutDebugLaunch);
+        if (layoutDebugLaunch != null) {
+            layoutDebugLaunch.setVisibility(isDebug ? View.VISIBLE : View.GONE);
+        }
+        
+        // Debug Launch Button Listener
+        findViewById(R.id.btnTestLaunch).setOnClickListener(v -> {
+            if (AppLaunchManager.loadConfig(MainActivity.this).isEmpty()) {
+                DebugLogger.toast(MainActivity.this, "请先选择需要自动启动的应用");
+            } else {
+                AppLaunchManager.executeLaunch(MainActivity.this);
+            }
+        });
 
         // Update visibility in debug switch listener
         switchDebug.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -520,6 +555,11 @@ public class MainActivity extends AppCompatActivity {
             layoutMediaButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             if (layoutDebugAvmButtons != null) {
                 layoutDebugAvmButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            }
+            // Debug Launch Button
+            // Debug Launch Button
+            if (layoutDebugLaunch != null) {
+                layoutDebugLaunch.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             }
 
             if (isChecked) {
@@ -685,7 +725,7 @@ public class MainActivity extends AppCompatActivity {
             icon.setImageResource(R.drawable.ic_check);
             icon.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_green_dark));
         } else {
-            icon.setImageResource(R.drawable.ic_close);
+            icon.setImageResource(R.drawable.ic_status_error);
             icon.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
         }
     }
@@ -988,7 +1028,6 @@ public class MainActivity extends AppCompatActivity {
     private void setupAutoStartApps() {
         SwitchMaterial switchAutoStart = findViewById(R.id.switchAutoStartApps);
         SwitchMaterial switchReturnToHome = findViewById(R.id.switchReturnToHome);
-        Button btnTestLaunch = findViewById(R.id.btnTestLaunch);
         ImageButton btnAddApp = findViewById(R.id.btnAddApp);
         LinearLayout llAutoStartAppsList = findViewById(R.id.llAutoStartAppsList);
 
@@ -999,6 +1038,7 @@ public class MainActivity extends AppCompatActivity {
         switchReturnToHome.setChecked(AppLaunchManager.isReturnToHomeEnabled(this));
 
         // Initialize List
+        View tvReturnToHome = findViewById(R.id.tvReturnToHome);
         llAutoStartAppsList.removeAllViews();
         for (AppLaunchManager.AppConfig config : savedConfigs) {
             addAppConfigRow(llAutoStartAppsList, config);
@@ -1006,13 +1046,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Update visibility
         if (isAutoStartEnabled) {
-            btnTestLaunch.setVisibility(View.VISIBLE);
             btnAddApp.setVisibility(View.VISIBLE);
+            if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.VISIBLE);
             switchReturnToHome.setVisibility(View.VISIBLE);
             llAutoStartAppsList.setVisibility(llAutoStartAppsList.getChildCount() > 0 ? View.VISIBLE : View.GONE);
         } else {
-            btnTestLaunch.setVisibility(View.GONE);
             btnAddApp.setVisibility(View.GONE);
+            if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.GONE);
             switchReturnToHome.setVisibility(View.GONE);
             llAutoStartAppsList.setVisibility(View.GONE);
         }
@@ -1020,13 +1060,13 @@ public class MainActivity extends AppCompatActivity {
         switchAutoStart.setOnCheckedChangeListener((buttonView, isChecked) -> {
             AppLaunchManager.setAutoStartEnabled(MainActivity.this, isChecked);
             if (isChecked) {
-                btnTestLaunch.setVisibility(View.VISIBLE);
                 btnAddApp.setVisibility(View.VISIBLE);
+                if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.VISIBLE);
                 switchReturnToHome.setVisibility(View.VISIBLE);
                 llAutoStartAppsList.setVisibility(llAutoStartAppsList.getChildCount() > 0 ? View.VISIBLE : View.GONE);
             } else {
-                btnTestLaunch.setVisibility(View.GONE);
                 btnAddApp.setVisibility(View.GONE);
+                if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.GONE);
                 switchReturnToHome.setVisibility(View.GONE);
                 llAutoStartAppsList.setVisibility(View.GONE);
             }
@@ -1040,13 +1080,7 @@ public class MainActivity extends AppCompatActivity {
             llAutoStartAppsList.setVisibility(View.VISIBLE);
         });
 
-        btnTestLaunch.setOnClickListener(v -> {
-            if (AppLaunchManager.loadConfig(MainActivity.this).isEmpty()) {
-                DebugLogger.toast(MainActivity.this, "请先选择需要自动启动的应用");
-            } else {
-                AppLaunchManager.executeLaunch(MainActivity.this);
-            }
-        });
+
     }
 
     private void addAppConfigRow(LinearLayout container, AppLaunchManager.AppConfig initialConfig) {
@@ -1054,7 +1088,29 @@ public class MainActivity extends AppCompatActivity {
 
         Spinner spinner = itemView.findViewById(R.id.spinnerAppSelection);
         android.widget.EditText etDelay = itemView.findViewById(R.id.etLaunchDelay);
+        ImageButton btnMinus = itemView.findViewById(R.id.btnDelayMinus);
+        ImageButton btnPlus = itemView.findViewById(R.id.btnDelayPlus);
         ImageButton btnDelete = itemView.findViewById(R.id.btnDeleteConfig);
+
+        btnMinus.setOnClickListener(v -> {
+            try {
+                int delay = Integer.parseInt(etDelay.getText().toString());
+                if (delay > 0) {
+                    etDelay.setText(String.valueOf(delay - 1));
+                }
+            } catch (NumberFormatException e) {
+                etDelay.setText("0");
+            }
+        });
+
+        btnPlus.setOnClickListener(v -> {
+            try {
+                int delay = Integer.parseInt(etDelay.getText().toString());
+                etDelay.setText(String.valueOf(delay + 1));
+            } catch (NumberFormatException e) {
+                etDelay.setText("1");
+            }
+        });
 
         List<AppLaunchManager.AppInfo> apps = AppLaunchManager.getInstalledApps(this);
         List<String> displayNames = new ArrayList<>();
@@ -1147,6 +1203,57 @@ public class MainActivity extends AppCompatActivity {
         } else {
             registerReceiver(receiver, filter);
         }
+    }
+
+    private void updateProgressView(SeekBar seekBar, View progressView) {
+        if (seekBar == null || progressView == null) return;
+        
+        int width = seekBar.getWidth();
+        if (width == 0) return; // Layout not ready
+
+        int paddingStart = seekBar.getPaddingStart();
+        int paddingEnd = seekBar.getPaddingEnd();
+        int usableWidth = width - paddingStart - paddingEnd;
+
+        int max = seekBar.getMax();
+        int min = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            min = seekBar.getMin();
+        } else {
+             // Hardcoded min=1 based on XML, but let's be safe. 
+             // Ideally we pass this or read it. For now assume 1 as per XML.
+             min = 1;
+        }
+
+        int progress = seekBar.getProgress();
+        
+        // Prevent division by zero
+        if (max <= min) return;
+
+        float ratio = (float)(progress - min) / (float)(max - min);
+        
+        // Calculate desired width:
+        // Start from left (0).
+        // Cover paddingStart (Gap) + portion of usable width.
+        // If progress is at min (ratio 0), width = paddingStart. (Fills the gap!)
+        // If progress is at max (ratio 1), width = paddingStart + usableWidth + (maybe paddingEnd)?
+        // Wait, if we want it to go all the way to right edge at max?
+        // User said "Thumb shouldn't exceed boundary". Thumb stops at paddingEnd.
+        // Should Blue Bar go beyond Thumb?
+        // Typically "Filled" means "Up to Thumb Center".
+        // Thumb Center at Min = paddingStart.
+        // Thumb Center at Max = width - paddingEnd.
+        
+        // So width = paddingStart + (usableWidth * ratio).
+        // This means at Min, Width = 12dp. (Covers the left cap).
+        // At Max, Width = Width - 12dp. (Covers up to right cap start).
+        // This looks visually correct for "Filled up to Thumb".
+        
+        int targetWidth = Math.round(paddingStart + (usableWidth * ratio));
+        
+        android.view.ViewGroup.LayoutParams params = progressView.getLayoutParams();
+        params.width = targetWidth;
+        progressView.setLayoutParams(params);
     }
 
 }

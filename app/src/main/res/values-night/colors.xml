@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Component Colors (Night) -->
+    <color name="color_card_background">#2C2C2C</color>
+    <color name="color_spinner_background">#3C3C3C</color>
+    <color name="color_spinner_stroke">#555555</color>
+    <color name="color_header_background">#00363A</color>
+</resources>

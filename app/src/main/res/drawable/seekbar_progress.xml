@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background is removed here, handled by View background to allow inset thumb -->
+    
+    <item android:id="@android:id/secondaryProgress">
+        <scale android:scaleWidth="100%">
+            <shape android:shape="rectangle">
+                <corners android:radius="12dp" />
+                <solid android:color="@color/cyan_200" />
+                <size android:height="24dp" />
+            </shape>
+        </scale>
+    </item>
+    
+    <item android:id="@android:id/progress">
+        <scale android:scaleWidth="100%">
+            <shape android:shape="rectangle">
+                <corners android:radius="12dp" />
+                <solid android:color="@color/cyan_500" />
+                <size android:height="24dp" />
+            </shape>
+        </scale>
+    </item>
+</layer-list>

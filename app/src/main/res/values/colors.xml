@@ -11,5 +11,12 @@
     <!-- Cyan Theme Colors -->
     <color name="cyan_500">#00BCD4</color>
     <color name="cyan_700">#0097A7</color>
+
     <color name="cyan_200">#80DEEA</color>
+
+    <!-- Component Colors (Day) -->
+    <color name="color_card_background">#F2F2F2</color>
+    <color name="color_spinner_background">#F5F5F5</color>
+    <color name="color_spinner_stroke">#E0E0E0</color>
+    <color name="color_header_background">@color/cyan_700</color>
 </resources>

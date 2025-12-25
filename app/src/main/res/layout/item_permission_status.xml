@@ -2,11 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="48dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingHorizontal="8dp"
-    android:paddingVertical="4dp"
+    android:paddingVertical="5dp"
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
@@ -15,7 +14,7 @@
         android:id="@+id/imgStatus"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:src="@drawable/ic_close"
+        android:src="@drawable/ic_status_error"
         android:tint="#F44336"
         android:contentDescription="@null"/>
 
@@ -26,7 +25,7 @@
         android:layout_weight="1"
         android:layout_marginStart="16dp"
         android:text="Permission Name"
-        android:textSize="16sp"
+        android:textSize="15sp"
         android:textColor="?android:attr/textColorPrimary"/>
 
     <Button
@@ -35,6 +34,11 @@
         android:layout_height="wrap_content"
         android:text="@string/fix_permission"
         android:visibility="gone"
+        android:minHeight="0dp"
+        android:minWidth="0dp"
+        android:paddingVertical="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
         style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
 </LinearLayout>
