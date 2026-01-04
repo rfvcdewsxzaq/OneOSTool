@@ -12,6 +12,7 @@
         android:layout_height="48dp"
         android:layout_weight="1"
         android:background="@drawable/bg_spinner"
+        android:saveEnabled="false"
         android:layout_marginEnd="8dp" />
 
     <TextView
@@ -36,6 +37,7 @@
         android:text="0"
         android:gravity="center"
         android:textSize="14sp"
+        android:saveEnabled="false"
         android:completionThreshold="1" />
 
     <ImageButton

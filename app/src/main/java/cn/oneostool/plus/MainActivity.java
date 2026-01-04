@@ -57,6 +57,10 @@ public class MainActivity extends AppCompatActivity {
     private long mLastInteractionTime = 0;
     private static final long INTERACTION_COOLDOWN_MS = 1500;
 
+    // Theme Sync Control
+    private long mLastThemeUserActionTime = 0;
+    private boolean mIsUpdatingThemeUI = false;
+
     private final ActivityResultLauncher<Intent> mStoragePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
                 checkPermissions();
@@ -156,21 +160,35 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Vehicle Theme Mode Settings
-        com.google.android.material.button.MaterialButtonToggleGroup toggleGroupThemeMode = findViewById(R.id.toggleGroupThemeMode);
+        com.google.android.material.button.MaterialButtonToggleGroup toggleGroupThemeMode = findViewById(
+                R.id.toggleGroupThemeMode);
 
         // Restore saved selection
         int savedThemeIdx = prefs.getInt("vehicle_theme_mode_index", 0);
         int checkedId = R.id.btnThemeAuto;
         switch (savedThemeIdx) {
-            case 0: checkedId = R.id.btnThemeAuto; break;
-            case 1: checkedId = R.id.btnThemeSunset; break;
-            case 2: checkedId = R.id.btnThemeDay; break;
-            case 3: checkedId = R.id.btnThemeNight; break;
+            case 0:
+                checkedId = R.id.btnThemeAuto;
+                break;
+            case 1:
+                checkedId = R.id.btnThemeSunset;
+                break;
+            case 2:
+                checkedId = R.id.btnThemeDay;
+                break;
+            case 3:
+                checkedId = R.id.btnThemeNight;
+                break;
         }
         toggleGroupThemeMode.check(checkedId);
 
         toggleGroupThemeMode.addOnButtonCheckedListener((group, checkedId1, isChecked) -> {
-            if (!isChecked) return; // Only handle the newly checked button
+            if (mIsUpdatingThemeUI)
+                return; // Ignore programmatic updates
+            if (!isChecked)
+                return; // Only handle the newly checked button
+
+            mLastThemeUserActionTime = System.currentTimeMillis(); // Timestamp user action
 
             int position = 0;
             int modeValue = 0x20150103; // Default Auto
@@ -196,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent("cn.oneostool.plus.ACTION_SET_THEME_MODE");
             intent.putExtra("mode_value", modeValue);
             sendBroadcast(intent);
-            
+
             DebugLogger.toast(this, getString(R.string.sent_autonavi_broadcast, modeValue));
         });
 
@@ -501,12 +519,12 @@ public class MainActivity extends AppCompatActivity {
         if (layoutDebugAvmButtons != null) {
             layoutDebugAvmButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         }
-        
+
         View layoutDebugLaunch = findViewById(R.id.layoutDebugLaunch);
         if (layoutDebugLaunch != null) {
             layoutDebugLaunch.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         }
-        
+
         // Debug Launch Button Listener
         findViewById(R.id.btnTestLaunch).setOnClickListener(v -> {
             if (AppLaunchManager.loadConfig(MainActivity.this).isEmpty()) {
@@ -698,6 +716,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void syncThemeUI(int targetId) {
+        // 1. Check Cooldown
+        if (System.currentTimeMillis() - mLastThemeUserActionTime < 1000) {
+            return;
+        }
+
+        com.google.android.material.button.MaterialButtonToggleGroup toggleGroup = findViewById(
+                R.id.toggleGroupThemeMode);
+        if (toggleGroup == null)
+            return;
+
+        // 2. Check if update is needed
+        if (toggleGroup.getCheckedButtonId() == targetId) {
+            return;
+        }
+
+        // 3. Update UI with Lock
+        mIsUpdatingThemeUI = true;
+        toggleGroup.check(targetId);
+        mIsUpdatingThemeUI = false;
+    }
+
     private void updateSensorStatus(int dayNightThemeMode, int dayNightSensor, float lightSensor, int avmProp,
             int brightnessDay, int brightnessNight, int leftTurn, int rightTurn) {
         TextView tvPropDayNightTheme = findViewById(R.id.tvPropDayNightTheme);
@@ -713,18 +753,22 @@ public class MainActivity extends AppCompatActivity {
             switch (dayNightThemeMode) {
                 case 0x20150103: // DAYMODE_SETTING_AUTO
                     modeStr = getString(R.string.mode_auto);
+                    syncThemeUI(R.id.btnThemeAuto);
                     break;
                 case 0x20150101: // DAYMODE_SETTING_DAY
                     modeStr = getString(R.string.mode_day);
+                    syncThemeUI(R.id.btnThemeDay);
                     break;
                 case 0x20150102: // DAYMODE_SETTING_NIGHT
                     modeStr = getString(R.string.mode_night);
+                    syncThemeUI(R.id.btnThemeNight);
                     break;
                 case 0x20150104: // VALUE_DAYMODE_CUSTOM
                     modeStr = getString(R.string.mode_custom);
                     break;
                 case 0x20150105: // VALUE_DAYMODE_SUNRISE_AND_SUNSET
                     modeStr = getString(R.string.mode_sunrise_sunset);
+                    syncThemeUI(R.id.btnThemeSunset);
                     break;
                 default:
                     modeStr = getString(R.string.mode_unknown);
@@ -1007,6 +1051,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize List
         View tvReturnToHome = findViewById(R.id.tvReturnToHome);
+        View layoutControls = findViewById(R.id.layoutAutoStartAppsControls);
+
         llAutoStartAppsList.removeAllViews();
         for (AppLaunchManager.AppConfig config : savedConfigs) {
             addAppConfigRow(llAutoStartAppsList, config);
@@ -1014,28 +1060,24 @@ public class MainActivity extends AppCompatActivity {
 
         // Update visibility
         if (isAutoStartEnabled) {
-            btnAddApp.setVisibility(View.VISIBLE);
-            if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.VISIBLE);
-            switchReturnToHome.setVisibility(View.VISIBLE);
+            if (layoutControls != null)
+                layoutControls.setVisibility(View.VISIBLE);
             llAutoStartAppsList.setVisibility(llAutoStartAppsList.getChildCount() > 0 ? View.VISIBLE : View.GONE);
         } else {
-            btnAddApp.setVisibility(View.GONE);
-            if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.GONE);
-            switchReturnToHome.setVisibility(View.GONE);
+            if (layoutControls != null)
+                layoutControls.setVisibility(View.GONE);
             llAutoStartAppsList.setVisibility(View.GONE);
         }
 
         switchAutoStart.setOnCheckedChangeListener((buttonView, isChecked) -> {
             AppLaunchManager.setAutoStartEnabled(MainActivity.this, isChecked);
             if (isChecked) {
-                btnAddApp.setVisibility(View.VISIBLE);
-                if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.VISIBLE);
-                switchReturnToHome.setVisibility(View.VISIBLE);
+                if (layoutControls != null)
+                    layoutControls.setVisibility(View.VISIBLE);
                 llAutoStartAppsList.setVisibility(llAutoStartAppsList.getChildCount() > 0 ? View.VISIBLE : View.GONE);
             } else {
-                btnAddApp.setVisibility(View.GONE);
-                if (tvReturnToHome != null) tvReturnToHome.setVisibility(View.GONE);
-                switchReturnToHome.setVisibility(View.GONE);
+                if (layoutControls != null)
+                    layoutControls.setVisibility(View.GONE);
                 llAutoStartAppsList.setVisibility(View.GONE);
             }
         });
@@ -1047,7 +1089,6 @@ public class MainActivity extends AppCompatActivity {
             addAppConfigRow(llAutoStartAppsList, null);
             llAutoStartAppsList.setVisibility(View.VISIBLE);
         });
-
 
     }
 
@@ -1174,10 +1215,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateProgressView(SeekBar seekBar, View progressView) {
-        if (seekBar == null || progressView == null) return;
-        
+        if (seekBar == null || progressView == null)
+            return;
+
         int width = seekBar.getWidth();
-        if (width == 0) return; // Layout not ready
+        if (width == 0)
+            return; // Layout not ready
 
         int paddingStart = seekBar.getPaddingStart();
         int paddingEnd = seekBar.getPaddingEnd();
@@ -1188,37 +1231,39 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             min = seekBar.getMin();
         } else {
-             // Hardcoded min=1 based on XML, but let's be safe. 
-             // Ideally we pass this or read it. For now assume 1 as per XML.
-             min = 1;
+            // Hardcoded min=1 based on XML, but let's be safe.
+            // Ideally we pass this or read it. For now assume 1 as per XML.
+            min = 1;
         }
 
         int progress = seekBar.getProgress();
-        
-        // Prevent division by zero
-        if (max <= min) return;
 
-        float ratio = (float)(progress - min) / (float)(max - min);
-        
+        // Prevent division by zero
+        if (max <= min)
+            return;
+
+        float ratio = (float) (progress - min) / (float) (max - min);
+
         // Calculate desired width:
         // Start from left (0).
         // Cover paddingStart (Gap) + portion of usable width.
         // If progress is at min (ratio 0), width = paddingStart. (Fills the gap!)
-        // If progress is at max (ratio 1), width = paddingStart + usableWidth + (maybe paddingEnd)?
+        // If progress is at max (ratio 1), width = paddingStart + usableWidth + (maybe
+        // paddingEnd)?
         // Wait, if we want it to go all the way to right edge at max?
         // User said "Thumb shouldn't exceed boundary". Thumb stops at paddingEnd.
         // Should Blue Bar go beyond Thumb?
         // Typically "Filled" means "Up to Thumb Center".
         // Thumb Center at Min = paddingStart.
         // Thumb Center at Max = width - paddingEnd.
-        
+
         // So width = paddingStart + (usableWidth * ratio).
         // This means at Min, Width = 12dp. (Covers the left cap).
         // At Max, Width = Width - 12dp. (Covers up to right cap start).
         // This looks visually correct for "Filled up to Thumb".
-        
+
         int targetWidth = Math.round(paddingStart + (usableWidth * ratio));
-        
+
         android.view.ViewGroup.LayoutParams params = progressView.getLayoutParams();
         params.width = targetWidth;
         progressView.setLayoutParams(params);

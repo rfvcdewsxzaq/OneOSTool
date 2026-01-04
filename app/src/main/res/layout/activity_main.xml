@@ -746,6 +746,7 @@
 
                     <!-- Secondary Row: Controls (Return Home, Test, Add) -->
                     <LinearLayout
+                        android:id="@+id/layoutAutoStartAppsControls"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -759,14 +760,12 @@
                             android:text="@string/return_to_home"
                             android:textSize="14sp"
                             android:textColor="?android:attr/textColorSecondary"
-                            android:visibility="gone"
                             android:layout_marginEnd="8dp"/>
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchReturnToHome"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:visibility="gone"
                             android:layout_marginEnd="16dp"/>
 
                         <Space
@@ -779,8 +778,7 @@
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:src="@drawable/ic_add"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:visibility="gone"/>
+                            android:background="?android:attr/selectableItemBackgroundBorderless"/>
                     </LinearLayout>
 
                 </LinearLayout>

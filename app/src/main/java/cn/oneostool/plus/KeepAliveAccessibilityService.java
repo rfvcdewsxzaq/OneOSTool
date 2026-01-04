@@ -351,53 +351,112 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private boolean mHasSpeedExceeded30 = false;
     private boolean mIsSmartAvmActive = false;
 
-    private void checkSmartAvmTrigger(float currentSpeed) {
-        if (!mIsSmartAvmEnabled || iCarFunction == null)
-            return;
+    // Smart AVM Debounce
+    private final android.os.Handler mAvmHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean mIsArmingPending = false;
+    private boolean mIsTriggerPending = false;
+    private boolean mIsResetPending = false;
 
-        boolean isTurnSignalOn = (mLastTurnSignalLeft == 1 || mLastTurnSignalRight == 1);
+    private final Runnable mArmingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mIsArmingPending = false;
+            mHasSpeedExceeded30 = true;
+            if (mIsSmartAvmActive) {
+                Log.i(TAG, "SmartAVM: Speed > 30 (Debounced), resetting active flag");
+                mIsSmartAvmActive = false;
+            }
+            Log.d(TAG, "SmartAVM: Armed (Speed > 30 sustained)");
+        }
+    };
 
-        // Logic Step 1: Monitor Speed during Turn
-        if (isTurnSignalOn) {
-            if (currentSpeed > 30) {
-                mHasSpeedExceeded30 = true;
-                // Refinement: If speed > 30 and we were active, reset active flag (System
-                // likely closed it)
-                // Flow effectively resets to "Waiting for trigger"
-                if (mIsSmartAvmActive) {
-                    Log.i(TAG, "SmartAVM: Speed > 30, resetting active flag (System takes over)");
-                    mIsSmartAvmActive = false;
-                }
-            } else {
-                // Speed <= 30
-                // Logic Step 2: Trigger Condition
-                if (mHasSpeedExceeded30 && !mIsSmartAvmActive) {
-                    // Check if AVM is already on to avoid spamming
-                    if (mLastAvmValue != 1) {
-                        Log.i(TAG, "SmartAVM: Triggering AVM (Speed dropped < 30 after > 30)");
-                        try {
-                            iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
-                            mIsSmartAvmActive = true;
-                            DebugLogger.toast(this, "智能360已自动开启");
-                        } catch (Exception e) {
-                            Log.e(TAG, "SmartAVM: Failed to open AVM", e);
-                        }
-                    }
+    private final Runnable mTriggerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mIsTriggerPending = false;
+            if (mLastAvmValue != 1) {
+                Log.i(TAG, "SmartAVM: Triggering AVM (Debounced)");
+                try {
+                    iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 1);
+                    mIsSmartAvmActive = true;
+                    DebugLogger.toast(KeepAliveAccessibilityService.this, "智能360已自动开启");
+                } catch (Exception e) {
+                    Log.e(TAG, "SmartAVM: Failed to open AVM", e);
                 }
             }
-        } else {
-            // Logic Step 3: Turn Signal Off - Reset
+        }
+    };
+
+    private final Runnable mResetRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mIsResetPending = false;
             if (mIsSmartAvmActive) {
-                Log.i(TAG, "SmartAVM: Turn signal OFF, closing AVM");
+                Log.i(TAG, "SmartAVM: Signals OFF (Debounced), closing AVM");
                 try {
                     iCarFunction.setFunctionValue(FUNC_AVM_STATUS, ZONE_ALL, 0);
                 } catch (Exception e) {
                     Log.e(TAG, "SmartAVM: Failed to close AVM", e);
                 }
             }
-            // Reset Flags
             mHasSpeedExceeded30 = false;
             mIsSmartAvmActive = false;
+            Log.d(TAG, "SmartAVM: Reset complete");
+        }
+    };
+
+    private void checkSmartAvmTrigger(float currentSpeed) {
+        if (!mIsSmartAvmEnabled || iCarFunction == null)
+            return;
+
+        boolean isTurnSignalOn = (mLastTurnSignalLeft == 1 || mLastTurnSignalRight == 1);
+
+        if (isTurnSignalOn) {
+            // Signal ON: Cancel Reset
+            if (mIsResetPending) {
+                mAvmHandler.removeCallbacks(mResetRunnable);
+                mIsResetPending = false;
+            }
+
+            if (currentSpeed > 30) {
+                // Speed > 30: Arming Path
+                if (mIsTriggerPending) {
+                    mAvmHandler.removeCallbacks(mTriggerRunnable);
+                    mIsTriggerPending = false;
+                }
+
+                if (!mHasSpeedExceeded30 && !mIsArmingPending) {
+                    mIsArmingPending = true;
+                    mAvmHandler.postDelayed(mArmingRunnable, 200);
+                }
+            } else {
+                // Speed <= 30: Trigger Path
+                if (mIsArmingPending) {
+                    mAvmHandler.removeCallbacks(mArmingRunnable);
+                    mIsArmingPending = false;
+                }
+
+                if (mHasSpeedExceeded30 && !mIsSmartAvmActive && !mIsTriggerPending) {
+                    mIsTriggerPending = true;
+                    mAvmHandler.postDelayed(mTriggerRunnable, 200);
+                }
+            }
+
+        } else {
+            // Signal OFF: Reset Path
+            if (mIsArmingPending) {
+                mAvmHandler.removeCallbacks(mArmingRunnable);
+                mIsArmingPending = false;
+            }
+            if (mIsTriggerPending) {
+                mAvmHandler.removeCallbacks(mTriggerRunnable);
+                mIsTriggerPending = false;
+            }
+
+            if (!mIsResetPending) {
+                mIsResetPending = true;
+                mAvmHandler.postDelayed(mResetRunnable, 200);
+            }
         }
     }
 
@@ -1510,7 +1569,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
                         // DEBUG: Toast on Main Thread
                         mOverrideHandler.post(() -> {
-                            //DebugLogger.toast(KeepAliveAccessibilityService.this, "PlayState: Src=" + source + " State=" + state);
+                            // DebugLogger.toast(KeepAliveAccessibilityService.this, "PlayState: Src=" +
+                            // source + " State=" + state);
                         });
 
                         // Source Filtering for State
