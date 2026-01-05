@@ -102,6 +102,12 @@ public class MainActivity extends AppCompatActivity {
         ContextCompat.registerReceiver(this, mMediaInfoReceiver, filterMedia, ContextCompat.RECEIVER_EXPORTED);
         ContextCompat.registerReceiver(this, mMediaPositionReceiver, filterPosition, ContextCompat.RECEIVER_EXPORTED);
 
+        android.content.IntentFilter gearFilter = new android.content.IntentFilter();
+        gearFilter.addAction(GearCalculationManager.ACTION_UPDATE_RPM);
+        gearFilter.addAction(GearCalculationManager.ACTION_UPDATE_GEAR);
+        gearFilter.addAction(GearCalculationManager.ACTION_UPDATE_DRIVE_MODE);
+        ContextCompat.registerReceiver(this, mGearReceiver, gearFilter, ContextCompat.RECEIVER_EXPORTED);
+
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_DAY_NIGHT_STATUS"));
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_ONEOS_STATUS"));
     }
@@ -136,9 +142,21 @@ public class MainActivity extends AppCompatActivity {
         if (tvPropAvm != null)
             tvPropAvm.setText(unknown);
 
+        TextView tvDriveMode = findViewById(R.id.tvDriveMode);
+        if (tvDriveMode != null)
+            tvDriveMode.setText(unknown);
+
         TextView tvTurnSignal = findViewById(R.id.tvTurnSignal);
         if (tvTurnSignal != null)
             tvTurnSignal.setText(unknown);
+
+        TextView tvRpmValue = findViewById(R.id.tvRpmValue);
+        if (tvRpmValue != null)
+            tvRpmValue.setText(unknown);
+
+        TextView tvGearValue = findViewById(R.id.tvGearValue);
+        if (tvGearValue != null)
+            tvGearValue.setText(unknown);
 
         // Buttons
         LinearLayout layoutDebugButtons = findViewById(R.id.layoutDebugButtons);
@@ -679,6 +697,51 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
+    private final android.content.BroadcastReceiver mGearReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (GearCalculationManager.ACTION_UPDATE_RPM.equals(action)) {
+                int rpm = intent.getIntExtra(GearCalculationManager.EXTRA_RPM, 0);
+                TextView tvRpm = findViewById(R.id.tvRpmValue);
+                if (tvRpm != null) {
+                    tvRpm.setText(String.valueOf(rpm));
+                }
+            } else if (GearCalculationManager.ACTION_UPDATE_GEAR.equals(action)) {
+                String gear = intent.getStringExtra(GearCalculationManager.EXTRA_GEAR);
+                TextView tvGear = findViewById(R.id.tvGearValue);
+                if (tvGear != null && gear != null) {
+                    tvGear.setText(gear);
+                }
+            } else if (GearCalculationManager.ACTION_UPDATE_DRIVE_MODE.equals(action)) {
+                int mode = intent.getIntExtra(GearCalculationManager.EXTRA_DRIVE_MODE, -1);
+                TextView tvDriveMode = findViewById(R.id.tvDriveMode);
+                if (tvDriveMode != null) {
+                    tvDriveMode.setText(getDriveModeString(mode));
+                }
+            }
+        }
+    };
+
+    private String getDriveModeString(int mode) {
+        switch (mode) {
+            case 570491137: // ECO
+                return "经济";
+            case 570491138: // COMFORT
+                return "舒适";
+            case 570491139: // DYNAMIC (Sport)
+                return "运动";
+            case 570491158: // ADAPTIVE (Smart)
+                return "智能";
+            case 570491145: // SNOW
+                return "雪地";
+            case 570491155: // OFFROAD
+                return "越野";
+            default:
+                return getString(R.string.mode_unknown);
+        }
+    }
 
     private final android.content.BroadcastReceiver mOneOSStatusReceiver = new android.content.BroadcastReceiver() {
         @Override

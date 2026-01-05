@@ -62,6 +62,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
     private ICarFunction iCarFunction;
     private ISensor iSensor;
+    private GearCalculationManager mGearManager; // Added Gear Manager
 
     // Brightness Override State
     private boolean mIsOverrideEnabled = false;
@@ -104,6 +105,8 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         mMediaSession = new MediaSession(this, "OneOS_Session");
         mMediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mMediaSession.setActive(true);
+
+        mGearManager = new GearCalculationManager(this); // Initialize Manager
     }
 
     @Override
@@ -199,6 +202,11 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         if (mNotificationManager != null) {
             mNotificationManager.cancel(NOTIFICATION_ID);
         }
+
+        if (mGearManager != null) {
+            mGearManager.cleanup();
+        }
+
         Log.i(TAG, "Service destroying, cleaning up resources...");
         stopMonitoring();
         mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
@@ -749,6 +757,10 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
                     if (iSensor != null) {
                         registerSensorListeners();
+                        // Init Gear Manager with Sensor
+                        if (mGearManager != null) {
+                            mGearManager.init(iSensor, iCarFunction);
+                        }
                     }
                     if (iCarFunction != null) {
                         registerFunctionListeners();

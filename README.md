@@ -44,13 +44,10 @@
    *注意：出于安全考虑ecarx.jar和ecarx.adaptapi.jar不随源码提供请自行从车机提取*
 ---
 
-## 特别感谢作者mwy1992的项目源码
+## 特别感谢
 
-作者：
-- [@mwy1992](https://github.com/mwy1992)
-  
-源项目地址：
-- [NaviTool](https://github.com/mwy1992/NaviTool)
+- [@mwy1992](https://github.com/mwy1992) 项目源码： [NaviTool](https://github.com/mwy1992/NaviTool)
+- [@iwandered](https://github.com/iwandered) 项目源码： [ws-Monjaro](https://github.com/iwandered/ws-Monjaro)
 ---
 
 ## 免责声明
