@@ -114,4 +114,13 @@
     <string name="perm_notification">通知监听权限</string>
     <string name="perm_desc_notification">需要此权限以读取正在播放的歌曲信息</string>
 
+    <!-- Sensor Data Labels -->
+    <string name="prop_ignition">点火状态</string>
+    <string name="prop_fuel_level">燃油液位</string>
+    <string name="prop_oil_level">机油液位</string>
+    <string name="prop_instant_fuel">瞬时油耗</string>
+    <string name="prop_avg_fuel">平均油耗</string>
+    <string name="prop_temp_out">车外温度</string>
+    <string name="prop_temp_in">车内温度</string>
+
 </resources>

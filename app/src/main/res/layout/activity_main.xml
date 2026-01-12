@@ -54,56 +54,438 @@
 
     </LinearLayout>
 
-    <!-- Main Content Area -->
+    <!-- Main Container (Horizontal: Left Tabs + Right Content) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:orientation="horizontal">
 
-        <!-- Left Pane: Controls (70%) -->
+        <!-- Left Side: Vertical Tabs -->
         <ScrollView
-            android:layout_width="0dp"
+            android:layout_width="110dp"
             android:layout_height="match_parent"
-            android:layout_weight="7"
-            android:paddingEnd="16dp"
-            android:scrollbarStyle="outsideOverlay">
-            <LinearLayout
+            android:background="?android:attr/colorBackground">
+            
+            <RadioGroup
+                android:id="@+id/tabGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:animateLayoutChanges="true"
-                android:gravity="top">
+                android:paddingTop="32dp"
+                android:checkedButton="@+id/tabData">
 
+                <RadioButton
+                    android:id="@+id/tabData"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/selector_tab_background"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="数据"
+                    android:textColor="@color/selector_tab_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
 
+                <RadioButton
+                    android:id="@+id/tabFunction"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/selector_tab_background"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="功能"
+                    android:textColor="@color/selector_tab_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
 
-            <!-- Auto Switch Toggle -->
-            <LinearLayout
+                <RadioButton
+                    android:id="@+id/tabHud"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/selector_tab_background"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="HUD"
+                    android:textColor="@color/selector_tab_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
+
+                <RadioButton
+                    android:id="@+id/tabPermission"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/selector_tab_background"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="权限"
+                    android:textColor="@color/selector_tab_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
+
+                <RadioButton
+                    android:id="@+id/tabAbout"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/selector_tab_background"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:text="关于"
+                    android:textColor="@color/selector_tab_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
+
+            </RadioGroup>
+        </ScrollView>
+
+        <!-- Vertical Divider Removed -->
+
+        <!-- Right Side: Content Area (FrameLayout) -->
+        <FrameLayout
+            android:id="@+id/contentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <!-- Tab 1: Data Monitor (Default Visible) -->
+            <ScrollView
+                android:id="@+id/viewDataValues"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="24dp"
-                android:background="@drawable/bg_function_item"
-                android:minHeight="80dp"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:visibility="visible">
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/auto_switch_theme"
-                    android:textSize="20sp"
-                    android:textColor="?android:attr/textColorPrimary"/>
+                    android:orientation="vertical">
+                    <!-- Data Monitor Card -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_function_item"
+                        android:paddingHorizontal="32dp"
+                        android:paddingVertical="24dp">
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchAutoTheme"
-                    android:layout_width="wrap_content"
+
+
+
+                        <!-- Media Info Status (Moved to Top) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingVertical="8dp"
+                            android:paddingHorizontal="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/prop_media_info"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginBottom="8dp"/>
+
+                            <LinearLayout 
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+                                
+                                <ImageView
+                                    android:id="@+id/imgAlbumArt"
+                                    android:layout_width="80dp"
+                                    android:layout_height="80dp"
+                                    android:src="@android:drawable/ic_menu_gallery"
+                                    android:scaleType="centerCrop"
+                                    android:layout_marginEnd="16dp"/>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="80dp"
+                                    android:orientation="vertical"
+                                    android:gravity="center_vertical">
+
+                                    <!-- Line 1: Song Title -->
+                                    <TextView
+                                        android:id="@+id/tvMediaTitle"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="0dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/mode_unknown"
+                                        android:textColor="?android:attr/textColorPrimary"
+                                        android:textSize="20sp"
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="marquee"
+                                        android:marqueeRepeatLimit="marquee_forever"
+                                        android:gravity="center_vertical|start"/>
+
+                                    <!-- Line 2: Artist -->
+                                    <TextView
+                                        android:id="@+id/tvMediaArtist"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="0dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/mode_unknown"
+                                        android:textColor="?android:attr/textColorSecondary"
+                                        android:textSize="20sp"
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:ellipsize="marquee"
+                                        android:marqueeRepeatLimit="marquee_forever"
+                                        android:gravity="center_vertical|start"/>
+
+                                    <!-- Line 3: Time / Duration -->
+                                    <TextView
+                                        android:id="@+id/tvMediaPosition"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="0dp"
+                                        android:layout_weight="1"
+                                        android:text="--:-- / --:--"
+                                        android:textColor="?android:attr/textColorSecondary"
+                                        android:textSize="20sp"
+                                        android:textStyle="bold"
+                                        android:singleLine="true"
+                                        android:gravity="center_vertical|start"/>
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+
+
+
+                        <LinearLayout
+                            android:id="@+id/dlDataMonitor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+
+
+                            <!-- 3-Column Data Monitor Layout -->
+                            <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
+
+                            <!-- Column 1: Ignition, Drive Mode, RPM, Gear, Speed, Instant Fuel, Avg Fuel -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <!-- Ignition -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_ignition" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvIgnitionState" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Drive Mode -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="驾驶模式:" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvDriveMode" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- RPM -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="转速:" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvRpmValue" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Gear -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="挡位:" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvGearValue" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Speed -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/sensor_speed_status" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvSensorSpeed" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Instant Fuel -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_instant_fuel" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvInstantFuel" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Avg Fuel -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_avg_fuel" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvAvgFuel" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Column 2: Light Sensor, Theme Mode, AVM, Turn Signal, In Temp, Out Temp -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <!-- Light Sensor -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/sensor_day_night" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvSensorDayNight" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Theme Mode -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_day_night_theme" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvPropDayNightTheme" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- AVM -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_avm" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvPropAvm" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Turn Signal -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_turn_signal" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvTurnSignal" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- In Temp -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_temp_in" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvTempIn" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Out Temp -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_temp_out" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvTempOut" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Column 3: Fuel, Oil, Bright Day, Bright Night -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <!-- Fuel Level -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_fuel_level" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvFuelLevel" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Oil Level -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_oil_level" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvOilLevel" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Brightness Day -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_brightness_day" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvPropBrightnessDay" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+
+                                <!-- Brightness Night -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:paddingVertical="8dp">
+                                    <TextView android:text="@string/prop_brightness_night" android:textSize="24sp" android:textStyle="bold" android:textColor="?android:attr/textColorSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                    <TextView android:id="@+id/tvPropBrightnessNight" android:text="@string/mode_unknown" android:textColor="?android:attr/textColorPrimary" android:textSize="24sp" android:textStyle="bold" android:layout_marginStart="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+                </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- Tab 2: Function Switches (Hidden) -->
+            <ScrollView
+                android:id="@+id/viewFunctionSwitches"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scaleX="1.5"
-                    android:scaleY="1.5"
-                    android:layout_marginEnd="20dp"/>
-            </LinearLayout>
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true"
+                    android:gravity="top">
+
+
+
+
 
 
 
@@ -137,27 +519,77 @@
             <!-- Debug Launch Button -->
 
 
-            <!-- Vehicle Theme Mode Settings -->
+            <!-- Auto Switch Toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_function_item"
+                android:minHeight="80dp"
+                android:padding="32dp">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchAutoTheme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleX="1.5"
+                    android:scaleY="1.5"
+                    android:layout_marginStart="12dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/auto_switch_theme"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginStart="24dp"/>
+            </LinearLayout>
+
+            <!-- Vehicle Theme Mode Lock -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_function_item"
-                android:padding="16dp">
+                android:minHeight="80dp"
+                android:padding="32dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/vehicle_theme_settings"
-                    android:textSize="20sp"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:layout_marginBottom="16dp"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchThemeLock"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scaleX="1.5"
+                        android:scaleY="1.5"
+                        android:layout_marginStart="12dp"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="车机主题模式锁定"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginStart="24dp"/>
+                </LinearLayout>
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/toggleGroupThemeMode"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone"
                     android:orientation="horizontal"
                     app:singleSelection="true"
                     app:selectionRequired="true"
@@ -171,7 +603,7 @@
                         android:layout_weight="1"
                         android:minHeight="60dp"
                         android:text="@string/mode_auto_multiline"
-                        android:textSize="18sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         android:gravity="center"
                         android:padding="4dp"
@@ -190,7 +622,7 @@
                         android:layout_weight="1"
                         android:minHeight="60dp"
                         android:text="@string/mode_sunset_multiline"
-                        android:textSize="18sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         android:gravity="center"
                         android:padding="4dp"
@@ -209,7 +641,7 @@
                         android:layout_weight="1"
                         android:minHeight="60dp"
                         android:text="@string/theme_mode_day"
-                        android:textSize="18sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         app:strokeWidth="1dp"
                         app:cornerRadius="12dp"
@@ -225,7 +657,7 @@
                         android:layout_weight="1"
                         android:minHeight="60dp"
                         android:text="@string/theme_mode_night"
-                        android:textSize="18sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
                         app:strokeWidth="1dp"
                         app:cornerRadius="12dp"
@@ -245,15 +677,7 @@
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_function_item"
                 android:minHeight="80dp"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="智能360辅助"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="20sp" />
+                android:padding="32dp">
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchSmartAvm"
@@ -261,7 +685,19 @@
                     android:layout_height="wrap_content"
                     android:scaleX="1.5"
                     android:scaleY="1.5"
-                    android:layout_marginEnd="20dp"/>
+                    android:layout_marginStart="12dp"/>
+
+
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="智能360辅助"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="24dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -290,15 +726,7 @@
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_function_item"
                 android:minHeight="80dp"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="车机自带在线音乐媒体通知"
-                    android:textSize="20sp"
-                    android:textColor="?android:attr/textColorPrimary"/>
+                android:padding="32dp">
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchMediaNotification"
@@ -306,7 +734,17 @@
                     android:layout_height="wrap_content"
                     android:scaleX="1.5"
                     android:scaleY="1.5"
-                    android:layout_marginEnd="20dp"/>
+                    android:layout_marginStart="12dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="车机自带在线音乐媒体通知"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginStart="24dp"/>
             </LinearLayout>
 
 
@@ -320,15 +758,7 @@
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_function_item"
                 android:minHeight="80dp"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/activate_steering_wheel"
-                    android:textSize="20sp"
-                    android:textColor="?android:attr/textColorPrimary"/>
+                android:padding="32dp">
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchSteeringWheel"
@@ -336,7 +766,17 @@
                     android:layout_height="wrap_content"
                     android:scaleX="1.5"
                     android:scaleY="1.5"
-                    android:layout_marginEnd="20dp"/>
+                    android:layout_marginStart="12dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/activate_steering_wheel"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginStart="24dp"/>
             </LinearLayout>
 
             <!-- Media Control Buttons (Debug Only) -->
@@ -383,7 +823,7 @@
                 android:orientation="vertical"
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_function_item"
-                android:padding="16dp">
+                android:padding="32dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -391,21 +831,23 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/override_brightness_title"
-                        android:textSize="20sp"
-                        android:textColor="?android:attr/textColorPrimary"/>
-
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchOverrideBrightness"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:scaleX="1.5"
                         android:scaleY="1.5"
-                        android:layout_marginEnd="20dp"/>
+                        android:layout_marginStart="12dp"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/override_brightness_title"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginStart="24dp"/>
                 </LinearLayout>
 
                 <!-- Brightness Override Controls (Day/Night/AVM) -->
@@ -433,7 +875,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/override_brightness_day"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
                                 android:textColor="?android:attr/textColorSecondary"/>
                             <TextView
                                 android:id="@+id/tvOverrideDayValue"
@@ -442,7 +885,7 @@
                                 android:text="5"
                                 android:layout_marginStart="8dp"
                                 android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
                                 android:textStyle="bold"/>
                         </LinearLayout>
                         
@@ -495,7 +938,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/override_brightness_night"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
                                 android:textColor="?android:attr/textColorSecondary"/>
                             <TextView
                                 android:id="@+id/tvOverrideNightValue"
@@ -504,7 +948,7 @@
                                 android:text="3"
                                 android:layout_marginStart="8dp"
                                 android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
                                 android:textStyle="bold"/>
                         </LinearLayout>
                         
@@ -541,8 +985,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginBottom="12dp"
-                        android:paddingVertical="4dp">
+                        android:layout_marginBottom="0dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="0dp">
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -552,7 +997,8 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/override_brightness_avm"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
                                 android:textColor="?android:attr/textColorSecondary"/>
                             <TextView
                                 android:id="@+id/tvOverrideAvmValue"
@@ -561,7 +1007,7 @@
                                 android:text="15"
                                 android:layout_marginStart="8dp"
                                 android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="18sp"
+                                android:textSize="24sp"
                                 android:textStyle="bold"/>
                         </LinearLayout>
                         
@@ -605,7 +1051,7 @@
                     android:orientation="vertical"
                     android:layout_marginBottom="24dp"
                     android:background="@drawable/bg_function_item"
-                    android:padding="16dp">
+                    android:padding="32dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -613,21 +1059,23 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/wechat_button_function"
-                            android:textSize="20sp"
-                            android:textColor="?android:attr/textColorPrimary"/>
-
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchWechatButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:scaleX="1.5"
                             android:scaleY="1.5"
-                            android:layout_marginEnd="20dp"/>
+                            android:layout_marginStart="12dp"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/wechat_button_function"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginStart="24dp"/>
                     </LinearLayout>
 
                     <!-- WeChat Short Press Function -->
@@ -638,31 +1086,31 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingStart="0dp"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="32dp"
                         android:visibility="gone">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/wechat_short_press"
-                            android:textSize="16sp"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:layout_marginEnd="8dp"/>
+                            android:textSize="24sp"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginEnd="12dp"/>
 
                         <Spinner
                             android:id="@+id/spinnerShortPressAction"
                             android:layout_width="wrap_content"
-                            android:layout_height="48dp"
+                            android:layout_height="64dp"
                             android:background="@drawable/bg_spinner"
-                            android:minWidth="120dp"/>
+                            android:minWidth="200dp"/>
                         
                         <Spinner
                             android:id="@+id/spinnerShortPressApp"
                             android:layout_width="0dp"
-                            android:layout_height="48dp"
+                            android:layout_height="64dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_spinner"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="12dp"
                             android:visibility="gone"/>
                     </LinearLayout>
 
@@ -674,31 +1122,31 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingStart="0dp"
-                        android:layout_marginTop="20dp"
+                        android:layout_marginTop="32dp"
                         android:visibility="gone">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/wechat_long_press"
-                            android:textSize="16sp"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:layout_marginEnd="8dp"/>
+                            android:textSize="24sp"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginEnd="12dp"/>
 
                         <Spinner
                             android:id="@+id/spinnerLongPressAction"
                             android:layout_width="wrap_content"
-                            android:layout_height="48dp"
+                            android:layout_height="64dp"
                             android:background="@drawable/bg_spinner"
-                            android:minWidth="120dp"/>
+                            android:minWidth="200dp"/>
 
                         <Spinner
                             android:id="@+id/spinnerLongPressApp"
                             android:layout_width="0dp"
-                            android:layout_height="48dp"
+                            android:layout_height="64dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_spinner"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="12dp"
                             android:visibility="gone"/>
                     </LinearLayout>
                 </LinearLayout>
@@ -710,7 +1158,9 @@
                     android:orientation="vertical"
                     android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_function_item"
-                    android:padding="16dp">
+                    android:paddingHorizontal="32dp"
+                    android:paddingTop="32dp"
+                    android:paddingBottom="12dp">
 
                     <!-- Top Row: Label and Main Switch -->
                     <LinearLayout
@@ -719,21 +1169,23 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
 
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchAutoStart"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:scaleX="1.5"
+                            android:scaleY="1.5"
+                            android:layout_marginStart="12dp"/>
+
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/auto_start_apps"
-                            android:textSize="20sp"
-                            android:textColor="?android:attr/textColorPrimary"/>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchAutoStartApps"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:scaleX="1.5"
-                            android:scaleY="1.5"
-                            android:layout_marginEnd="20dp"/>
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginStart="24dp"/>
                     </LinearLayout>
 
                     <!-- Dynamic Config Container -->
@@ -742,6 +1194,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
+                        android:layout_marginTop="16dp"
                         android:visibility="gone" />
 
                     <!-- Secondary Row: Controls (Return Home, Test, Add) -->
@@ -751,14 +1204,14 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginTop="12dp">
+                        android:layout_marginTop="8dp">
 
                         <TextView
                             android:id="@+id/tvReturnToHome"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/return_to_home"
-                            android:textSize="14sp"
+                            android:textSize="24sp"
                             android:textColor="?android:attr/textColorSecondary"
                             android:layout_marginEnd="8dp"/>
 
@@ -775,9 +1228,11 @@
                             
                         <ImageButton
                             android:id="@+id/btnAddApp"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
                             android:src="@drawable/ic_add"
+                            android:scaleType="fitCenter"
+                            android:padding="12dp"
                             android:background="?android:attr/selectableItemBackgroundBorderless"/>
                     </LinearLayout>
 
@@ -800,514 +1255,528 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
             </LinearLayout>
             </LinearLayout>
-        </ScrollView>
+            </ScrollView>
 
-        <!-- Divider -->
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="?android:attr/listDivider"
-            android:layout_marginHorizontal="8dp"/>
-
-        <!-- Right Pane: Status & Settings (30%) -->
-        <ScrollView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:paddingStart="8dp">
-
-            <LinearLayout
+            <!-- Tab 3: Permissions (Hidden) -->
+            <ScrollView
+                android:id="@+id/viewPermissions"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:animateLayoutChanges="true">
+                android:layout_height="match_parent"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <!-- Permission Status List -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_function_item"
+                        android:paddingHorizontal="32dp"
+                        android:paddingVertical="27dp"
+                        android:layout_marginTop="16dp">
 
-            <!-- Data Monitor Card -->
-            <LinearLayout
+                        <!-- Root Fix Button -->
+                        <Button
+                            android:id="@+id/btnRootFix"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Root 一键修复所有权限"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:visibility="gone"
+                            android:backgroundTint="@color/cyan_700"
+                            android:textColor="@android:color/white"
+                            android:layout_marginBottom="24dp"
+                            app:icon="@drawable/ic_settings"
+                            style="@style/Widget.MaterialComponents.Button.Icon"/>
+
+
+
+
+                        <!-- Media Key Service Status -->
+                        <LinearLayout
+                            android:id="@+id/layoutMediaKeyServiceStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?android:attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="5dp">
+
+                            <ImageView
+                                android:id="@+id/imgMediaKeyServiceIcon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:contentDescription="@string/media_key_service_title"
+                                android:src="@drawable/ic_status_error" />
+
+                            <TextView
+                                android:id="@+id/tvMediaKeyServiceStatus"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/media_key_service_title"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Media Info Service Status -->
+                        <LinearLayout
+                            android:id="@+id/layoutMediaInfoServiceStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?android:attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="5dp">
+
+                            <ImageView
+                                android:id="@+id/imgMediaInfoServiceIcon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/ic_status_error" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="媒体信息监听服务"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+
+
+                        <!-- Accessibility Status -->
+                        <LinearLayout
+                            android:id="@+id/statusAccessibility"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?android:attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="5dp">
+
+                            <ImageView
+                                android:id="@+id/imgStatus"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="16dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_status_error" />
+
+                            <TextView
+                                android:id="@+id/txtPermissionName"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/perm_accessibility"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <Button
+                                android:id="@+id/btnFix"
+                                style="@style/Widget.MaterialComponents.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/btn_fix"
+                                android:textColor="@color/cyan_700"
+                                android:minHeight="0dp"
+                                android:minWidth="0dp"
+                                android:paddingVertical="0dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+
+
+
+                        <include layout="@layout/item_permission_status" android:id="@+id/statusAutoStart"/>
+                        <include layout="@layout/item_permission_status" android:id="@+id/statusOverlay"/>
+                        <include layout="@layout/item_permission_status" android:id="@+id/statusStorage"/>
+                        <include layout="@layout/item_permission_status" android:id="@+id/statusBattery"/>
+
+
+
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- Tab 5: HUD (Hidden by default) -->
+            <ScrollView
+                android:id="@+id/viewHud"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_function_item"
-                android:padding="16dp">
-
-                <!-- Sensor Status Title -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/sensor_title"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="16dp"
-                    android:textColor="?android:attr/textColorPrimary"/>
-
-                <!-- Day/Night Theme -->
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- Unified HUD Function Card -->
+                    <LinearLayout
+                        android:id="@+id/cardHudMerged"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/prop_day_night_theme"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_function_item"
+                        android:paddingBottom="24dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false">
 
+                        <!-- Header: Switch -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:minHeight="80dp"
+                            android:paddingLeft="32dp"
+                            android:paddingRight="32dp"
+                            android:paddingTop="24dp"
+                            android:paddingBottom="24dp">
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switchHud"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:scaleX="1.5"
+                                android:scaleY="1.5"
+                                android:layout_marginStart="12dp"/>
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="使能 HUD 悬浮窗"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:layout_marginStart="24dp"/>
+                        </LinearLayout>
+
+                        <!-- Body: Editor (Conditionally Visible) -->
+                        <LinearLayout
+                            android:id="@+id/cardHudEditor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingLeft="24dp"
+                            android:paddingRight="24dp"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"
+                            android:visibility="gone">
+
+                            <!-- Component Toggles -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="12dp">
+
+                                <CheckBox
+                                    android:id="@+id/switchHudTime"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="时间组件"
+                                    android:textSize="16sp"
+                                    android:checked="true"
+                                    android:button="?android:attr/listChoiceIndicatorSingle"
+                                    android:paddingStart="8dp"
+                                    android:layout_marginEnd="24dp"/>
+
+                                <CheckBox
+                                    android:id="@+id/switchHudImage"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="自定义图片"
+                                    android:textSize="16sp"
+                                    android:checked="true"
+                                    android:button="?android:attr/listChoiceIndicatorSingle"
+                                    android:paddingStart="8dp"/>
+
+                                <CheckBox
+                                    android:id="@+id/switchHudMediaCover"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="媒体封面"
+                                    android:textSize="16sp"
+                                    android:checked="true"
+                                    android:button="?android:attr/listChoiceIndicatorSingle"
+                                    android:paddingStart="8dp"
+                                    android:layout_marginStart="24dp"/>
+
+                                <CheckBox
+                                    android:id="@+id/switchHudGear"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="档位"
+                                    android:textSize="16sp"
+                                    android:checked="true"
+                                    android:button="?android:attr/listChoiceIndicatorSingle"
+                                    android:paddingStart="8dp"
+                                    android:layout_marginStart="24dp"/>
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="拖拽组件调整位置，捏合调整大小"
+                                android:gravity="center"
+                                android:textColor="#88FFFFFF"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="12dp"/>
+
+                            <!-- Aspect Ratio Container -->
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:clipChildren="false"
+                                android:clipToPadding="false">
+
+                                <FrameLayout
+                                    android:id="@+id/hud_editor_container"
+                                    android:layout_width="0dp"
+                                    android:layout_height="0dp"
+                                    android:background="@color/color_hud_editor_bg"
+                                    android:clipChildren="false"
+                                    android:clipToPadding="false"
+                                    app:layout_constraintDimensionRatio="H,728:186"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent"
+                                    app:layout_constraintBottom_toBottomOf="parent">
+
+                                    <!-- Media Cover Widget (Added) -->
+                                    <FrameLayout
+                                        android:id="@+id/media_cover_widget_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center"
+                                        android:clipChildren="false"
+                                        android:clipToPadding="false"
+                                        android:translationX="-100dp">
+
+                                        <androidx.cardview.widget.CardView
+                                            android:id="@+id/card_media_cover"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginEnd="15dp"
+                                            android:layout_marginBottom="15dp"
+                                            app:cardBackgroundColor="@android:color/transparent"
+                                            app:cardElevation="0dp"
+                                            app:cardCornerRadius="5dp">
+
+                                            <ImageView
+                                                android:id="@+id/view_media_cover"
+                                                android:layout_width="100dp"
+                                                android:layout_height="100dp"
+                                                android:src="@drawable/ic_music_placeholder"
+                                                android:background="#44000000"
+                                                android:scaleType="centerInside"/>
+                                        </androidx.cardview.widget.CardView>
+
+                                    <ImageView
+                                        android:id="@+id/iv_resize_media_cover"
+                                        android:layout_width="30dp"
+                                        android:layout_height="30dp"
+                                        android:layout_gravity="bottom|end"
+                                        android:src="@drawable/ic_resize_handle"
+                                        app:tint="@android:color/white" />
+                                </FrameLayout>
+
+                                <FrameLayout
+                                    android:id="@+id/gear_widget_container"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:clipChildren="false"
+                                    android:clipToPadding="false"
+                                    android:layout_gravity="center">
+
+                                    <cn.oneostool.plus.TightTextView
+                                        android:id="@+id/tv_gear"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="D1"
+                                        android:textColor="@android:color/white"
+                                        android:textSize="40sp"
+                                        android:textStyle="bold"
+                                        android:layout_marginEnd="0dp"
+                                        android:layout_marginBottom="0dp"/>
+                                </FrameLayout>
+
+                                <ImageView
+                                    android:id="@+id/iv_resize_handle_gear"
+                                    android:layout_width="30dp"
+                                    android:layout_height="30dp"
+                                    android:visibility="gone" 
+                                    android:src="@drawable/ic_resize_handle"
+                                    app:tint="@android:color/white" />
+
+                                    <!-- Image Widget (Moved to Back) -->
+                                    <FrameLayout
+                                        android:id="@+id/white_widget_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_gravity="center"
+                                        android:clipChildren="false"
+                                        android:clipToPadding="false"
+                                        android:translationX="100dp">
+
+                                    <androidx.cardview.widget.CardView
+                                        android:id="@+id/card_white_rect"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginEnd="15dp"
+                                        android:layout_marginBottom="15dp"
+                                        app:cardBackgroundColor="@android:color/transparent"
+                                        app:cardElevation="0dp"
+                                        app:cardCornerRadius="5dp">
+
+                                        <ImageView
+                                            android:id="@+id/view_white_rect"
+                                            android:layout_width="100dp"
+                                            android:layout_height="100dp"
+                                            android:src="@drawable/verification_image"
+                                            android:scaleType="fitXY"/>
+                                    </androidx.cardview.widget.CardView>
+
+                                        <ImageView
+                                            android:id="@+id/iv_resize_white"
+                                            android:layout_width="30dp"
+                                            android:layout_height="30dp"
+                                            android:layout_gravity="bottom|end"
+                                            android:src="@drawable/ic_resize_handle"
+                                            app:tint="@android:color/white" />
+                                    </FrameLayout>
+
+                                    <!-- Time Widget (Moved to Front) -->
+                                    <FrameLayout
+                                        android:id="@+id/time_widget_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:clipChildren="false"
+                                        android:clipToPadding="false"
+                                        android:layout_gravity="center">
+
+                                    <cn.oneostool.plus.TightTextView
+                                            android:id="@+id/tv_time"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="12:30"
+                                            android:textColor="@android:color/white"
+                                            android:textSize="40sp"
+                                            android:textStyle="bold"
+                                            android:layout_marginEnd="0dp"
+                                            android:layout_marginBottom="0dp"/>
+                                    </FrameLayout>
+
+                                    <!-- Independent Resize Handle (Sibling to TimeWidget) -->
+                                    <ImageView
+                                        android:id="@+id/iv_resize_handle"
+                                        android:layout_width="30dp"
+                                        android:layout_height="30dp"
+                                        android:visibility="visible"
+                                        android:src="@drawable/ic_resize_handle"
+                                        app:tint="@android:color/white" />
+
+                                    <!-- Guideline Overlay (Top Layer) -->
+                                    <cn.oneostool.plus.GuidelineView
+                                        android:id="@+id/guideline_overlay"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:clickable="false"
+                                        android:focusable="false"
+                                        android:visibility="visible"/>
+                                </FrameLayout>
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="end"
+                                android:layout_marginTop="16dp">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnLockEditor"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="保存并锁定"
+                                    app:icon="@drawable/ic_lock_outline"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                    android:layout_marginEnd="8dp"/>
+
+                                <Button
+                                    android:id="@+id/btnResetHud"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="重置布局"/>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- HUD Status Info Area (Moved below merged card) -->
                     <TextView
-                        android:id="@+id/tvPropDayNightTheme"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/tvHudStatus"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="16dp"
+                        android:padding="12dp"
+                        android:background="#10000000"
+                        android:text="HUD 状态: 等待初始化..."
+                        android:fontFamily="monospace"
+                        android:textSize="14sp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:visibility="gone"/>
                 </LinearLayout>
+            </ScrollView>
 
-                <!-- Day/Night Sensor -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/sensor_day_night"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvSensorDayNight"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Speed Sensor -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/sensor_speed_status"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvSensorSpeed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Drive Mode -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="驾驶模式:"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvDriveMode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- RPM Sensor -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="转速:"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvRpmValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Gear Status -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="挡位:"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvGearValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- AVM Status -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/prop_avm"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvPropAvm"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Turn Signal Status -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/prop_turn_signal"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvTurnSignal"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/mode_unknown"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Brightness Control -->
-                <LinearLayout 
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/prop_brightness_day"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvPropBrightnessDay"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/mode_unknown"
-                        android:layout_marginStart="8dp"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <LinearLayout 
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/prop_brightness_night"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"/>
-
-                    <TextView
-                        android:id="@+id/tvPropBrightnessNight"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/mode_unknown"
-                        android:layout_marginStart="8dp"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"/>
-                </LinearLayout>
-
-                <!-- Media Info Status -->
+            <!-- Tab 4: About (Hidden) -->
+            <ScrollView
+                android:id="@+id/viewAbout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingVertical="5dp"
-                    android:paddingHorizontal="8dp">
-
+                    android:padding="16dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/prop_media_info"
-                        android:textSize="15sp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:layout_marginBottom="8dp"/>
-
-                    <LinearLayout 
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-                        
-                        <ImageView
-                            android:id="@+id/imgAlbumArt"
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:src="@android:drawable/ic_menu_gallery"
-                            android:scaleType="centerCrop"
-                            android:layout_marginEnd="12dp"/>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="64dp"
-                            android:orientation="vertical"
-                            android:gravity="center_vertical">
-
-                            <!-- Line 1: Song Title -->
-                            <TextView
-                                android:id="@+id/tvMediaTitle"
-                                android:layout_width="match_parent"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="@string/mode_unknown"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:singleLine="true"
-                                android:ellipsize="marquee"
-                                android:marqueeRepeatLimit="marquee_forever"
-                                android:gravity="center_vertical|start"/>
-
-                            <!-- Line 2: Artist -->
-                            <TextView
-                                android:id="@+id/tvMediaArtist"
-                                android:layout_width="match_parent"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="@string/mode_unknown"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="12sp"
-                                android:singleLine="true"
-                                android:ellipsize="marquee"
-                                android:marqueeRepeatLimit="marquee_forever"
-                                android:gravity="center_vertical|start"/>
-
-                            <!-- Line 3: Time / Duration -->
-                            <TextView
-                                android:id="@+id/tvMediaPosition"
-                                android:layout_width="match_parent"
-                                android:layout_height="0dp"
-                                android:layout_weight="1"
-                                android:text="--:-- / --:--"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="12sp"
-                                android:singleLine="true"
-                                android:gravity="center_vertical|start"/>
-
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
-
-
-
-            <!-- Permission Status List -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_function_item"
-                android:padding="16dp"
-                android:layout_marginTop="16dp">
-
-                <!-- Permission Status Header -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="权限状态"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="16dp"
-                    android:textColor="?android:attr/textColorPrimary"/>
-
-
-                <!-- Media Key Service Status -->
-                <LinearLayout
-                    android:id="@+id/layoutMediaKeyServiceStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="5dp">
-
-                    <ImageView
-                        android:id="@+id/imgMediaKeyServiceIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:contentDescription="@string/media_key_service_title"
-                        android:src="@drawable/ic_status_error" />
-
+                        android:text="关于软件"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary"/>
                     <TextView
-                        android:id="@+id/tvMediaKeyServiceStatus"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/media_key_service_title"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Media Info Service Status -->
-                <LinearLayout
-                    android:id="@+id/layoutMediaInfoServiceStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="5dp">
-
-                    <ImageView
-                        android:id="@+id/imgMediaInfoServiceIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_status_error" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="媒体信息监听服务"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-
-
-                <!-- Accessibility Status -->
-                <LinearLayout
-                    android:id="@+id/statusAccessibility"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="5dp">
-
-                    <ImageView
-                        android:id="@+id/imgStatus"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_status_error" />
-
-                    <TextView
-                        android:id="@+id/txtPermissionName"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/perm_accessibility"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp" />
-
-                    <Button
-                        android:id="@+id/btnFix"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/btn_fix"
-                        android:textColor="@color/cyan_700"
-                        android:minHeight="0dp"
-                        android:minWidth="0dp"
-                        android:paddingVertical="0dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:visibility="gone" />
+                        android:text="OneOSTool Plus"
+                        android:textSize="18sp"
+                        android:layout_marginTop="16dp"
+                        android:textColor="?android:attr/textColorSecondary"/>
+                     <!-- More About Content -->
                 </LinearLayout>
+            </ScrollView>
 
-
-
-                <include layout="@layout/item_permission_status" android:id="@+id/statusAutoStart"/>
-                <include layout="@layout/item_permission_status" android:id="@+id/statusOverlay"/>
-                <include layout="@layout/item_permission_status" android:id="@+id/statusStorage"/>
-                <include layout="@layout/item_permission_status" android:id="@+id/statusBattery"/>
-
-
-
-            </LinearLayout>
-
-
-            </LinearLayout>
-        </ScrollView>
+        </FrameLayout>
     </LinearLayout>
 
 </LinearLayout>

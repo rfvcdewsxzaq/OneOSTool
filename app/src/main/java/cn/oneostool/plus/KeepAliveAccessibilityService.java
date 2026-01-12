@@ -16,6 +16,10 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import androidx.core.content.ContextCompat;
 
+import android.hardware.display.DisplayManager;
+import android.view.Display;
+import android.view.WindowManager;
+
 import com.ecarx.xui.adaptapi.car.vehicle.IBcm;
 import com.ecarx.xui.adaptapi.car.vehicle.IDayMode;
 import com.ecarx.xui.adaptapi.car.vehicle.IPAS;
@@ -60,6 +64,26 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private boolean mIsMediaNotificationEnabled = true; // Added
     private com.geely.lib.oneosapi.mediacenter.bean.MediaData mCurrentMediaData; // Added field
 
+    // New Sensor Constants (from MConfigTOPmediaHUD+)
+    private static final int SENSOR_INSTANT_FUEL_CONSUMPTION = 4194816;
+    private static final int SENSOR_AVG_FUEL_CONSUMPTION_VALUE = 4195072;
+    // Standard ISensor types should be available in the library, but defining here
+    // if needed (commented out if using library)
+    // private static final int SENSOR_TYPE_FUEL_LEVEL = 0x200200; // Example,
+    // relying on ISensor import
+
+    // Sensor Data Cache
+    private boolean mLastIgnitionState = false; // true = Driving
+    private float mLastFuelLevel = -1f;
+    private String mLastOilLevel = "未知";
+    private float mLastInstantFuel = -1f;
+    private float mLastAvgFuel = -1f;
+    private float mLastValidAvgFuel = -1f;
+    private long mLastValidAvgFuelTime = 0;
+    private float mLastTempOut = -999f;
+    private float mLastTempIn = -999f;
+    private String mCurrentForegroundPkg = ""; // Track current foreground app
+
     private ICarFunction iCarFunction;
     private ISensor iSensor;
     private GearCalculationManager mGearManager; // Added Gear Manager
@@ -85,6 +109,62 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             checkAndEnforceBrightness();
             mOverrideHandler.postDelayed(this, 150); // 150ms
                                                      // loop
+        }
+    };
+
+    // --- HUD Management Fields ---
+    private android.hardware.display.DisplayManager mDisplayManager;
+    private HudPresentation mHudPresentation;
+    private final android.os.Handler mHudHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    private final Runnable mHudUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mHudPresentation != null) {
+                // Update Time
+                String time = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(new java.util.Date());
+
+                // Read Prefs for Visibility (cheap read)
+                SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
+                boolean showTime = prefs.getBoolean("time_widget_enabled", true);
+
+                // Update Time on HUD
+                mHudPresentation.setTimeVisibility(showTime);
+                if (showTime) {
+                    // For time, we just update text. Layout is static in offline mode unless config
+                    // changes.
+                    // We don't have access to dynamic ratio here easily without re-reading prefs
+                    // constantly.
+                    // But syncHudLayout() sets the static layout.
+                    // We just need to update the text.
+                    // HudPresentation needs a setText method? No, syncTimeWidget takes text.
+                    // We can reuse cached layout params if we store them, or re-read.
+                    // Re-reading prefs every second is fine.
+                    syncHudVisuals(time);
+                }
+            }
+            mHudHandler.postDelayed(this, 1000);
+        }
+    };
+
+    private final android.hardware.display.DisplayManager.DisplayListener mDisplayListener = new android.hardware.display.DisplayManager.DisplayListener() {
+        @Override
+        public void onDisplayAdded(int displayId) {
+            Log.i(TAG, "Display Added: " + displayId);
+            checkAndShowHud();
+        }
+
+        @Override
+        public void onDisplayRemoved(int displayId) {
+            Log.i(TAG, "Display Removed: " + displayId);
+            if (mHudPresentation != null && mHudPresentation.getDisplay().getDisplayId() == displayId) {
+                dismissHud();
+            }
+        }
+
+        @Override
+        public void onDisplayChanged(int displayId) {
         }
     };
 
@@ -114,11 +194,12 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
         Log.i(TAG, "Service Connected");
 
-        SharedPreferences prefs = getSharedPreferences("navitool_prefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("oneostool_prefs", MODE_PRIVATE);
 
         // Load initial override state
         mIsOverrideEnabled = prefs.getBoolean("override_brightness_enabled", false);
         mTargetBrightnessDay = prefs.getInt("override_day_value", 14);
+        mTargetBrightnessNight = prefs.getInt("override_night_value", 3);
         mTargetBrightnessNight = prefs.getInt("override_night_value", 3);
         mTargetBrightnessAvm = prefs.getInt("override_avm_value", 15);
 
@@ -133,6 +214,16 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         // Start enforcement loop
         mOverrideHandler.post(mOverrideRunnable);
+
+        // --- HUD Initialization (Auto-Start Support) ---
+        mDisplayManager = (android.hardware.display.DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        if (mDisplayManager != null) {
+            mDisplayManager.registerDisplayListener(mDisplayListener, null);
+            // Initial check for HUD display
+            checkAndShowHud();
+        }
+        // Start 1-second timer for HUD Time & updates
+        mHandler.post(mHudUpdateRunnable);
 
         // Restore last media info
         String lastTitle = prefs.getString("last_media_title", null);
@@ -177,15 +268,17 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         filter.addAction("cn.oneostool.plus.ACTION_REQUEST_ONEOS_STATUS");
+        filter.addAction("cn.oneostool.plus.ACTION_REQUEST_GEAR_INFO");
         filter.addAction("cn.oneostool.plus.ACTION_SET_THEME_MODE");
         filter.addAction("cn.oneostool.plus.ACTION_SET_BRIGHTNESS");
         filter.addAction("cn.oneostool.plus.ACTION_SET_BRIGHTNESS_OVERRIDE_CONFIG");
         filter.addAction("cn.oneostool.plus.ACTION_TEST_TURN_SIGNAL");
         filter.addAction("cn.oneostool.plus.ACTION_SET_SMART_AVM_CONFIG");
         filter.addAction("cn.oneostool.plus.ACTION_SET_MEDIA_NOTIFICATION_CONFIG");
+        filter.addAction("cn.oneostool.plus.ACTION_HUD_CONFIG_CHANGED");
+        filter.addAction("cn.oneostool.plus.ACTION_UPDATE_GEAR");
+        filter.addAction("cn.oneostool.plus.ACTION_HUD_VISIBILITY_CHANGED");
         filter.addAction(Intent.ACTION_MEDIA_BUTTON);
-        ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
-
         ContextCompat.registerReceiver(this, configChangeReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
         // Delay navigation monitoring init to allow service binding
@@ -208,6 +301,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         }
 
         Log.i(TAG, "Service destroying, cleaning up resources...");
+        dismissHud();
         stopMonitoring();
         mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
 
@@ -224,9 +318,14 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             CharSequence packageName = event.getPackageName();
-            if (packageName != null && AUTONAVI_PKG.equals(packageName.toString())) {
-                Log.d(TAG, "AutoNavi detected in foreground. Syncing theme...");
-                syncAutoNaviTheme();
+            if (packageName != null) {
+                mCurrentForegroundPkg = packageName.toString();
+                // Log.d(TAG, "Foreground App: " + mCurrentForegroundPkg); // Optional logging
+
+                if (AUTONAVI_PKG.equals(mCurrentForegroundPkg)) {
+                    Log.d(TAG, "AutoNavi detected in foreground. Syncing theme...");
+                    syncAutoNaviTheme();
+                }
             }
         }
     }
@@ -493,32 +592,33 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 Log.d(TAG,
                         "Polled Brightness Changed - Day: " + mLastBrightnessDayValue + ", Night: "
                                 + mLastBrightnessNightValue);
-                broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
-                        mLastAvmValue, mLastBrightnessDayValue, mLastBrightnessNightValue);
+                broadcastSensorValues();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error polling brightness", e);
         }
     }
 
-    private void broadcastSensorValues(int dayNightValue, float speedValue, int avmValue,
-            int brightnessDay, int brightnessNight) {
-        mLastDayNightSensorValue = dayNightValue;
-        mLastSpeedSensorValue = speedValue;
-        mLastAvmValue = avmValue;
-        mLastBrightnessDayValue = brightnessDay;
-        mLastBrightnessNightValue = brightnessNight;
-
+    private void broadcastSensorValues() {
         Intent intent = new Intent("cn.oneostool.plus.ACTION_DAY_NIGHT_STATUS");
-        // We send just sensor values.
-        intent.putExtra("mode", mLastThemeMode); // Include Theme Mode
-        intent.putExtra("sensor_day_night", dayNightValue);
-        intent.putExtra("sensor_light", speedValue); // Key kept as sensor_light for compatibility
-        intent.putExtra("prop_avm", avmValue);
-        intent.putExtra("prop_brightness_day", brightnessDay);
-        intent.putExtra("prop_brightness_night", brightnessNight);
+        intent.putExtra("mode", mLastThemeMode);
+        intent.putExtra("sensor_day_night", mLastDayNightSensorValue);
+        intent.putExtra("sensor_light", mLastSpeedSensorValue);
+        intent.putExtra("prop_avm", mLastAvmValue);
+        intent.putExtra("prop_brightness_day", mLastBrightnessDayValue);
+        intent.putExtra("prop_brightness_night", mLastBrightnessNightValue);
         intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
         intent.putExtra("prop_turn_right", mLastTurnSignalRight);
+
+        // New Data
+        intent.putExtra("val_ignition", mLastIgnitionState);
+        intent.putExtra("val_fuel_level", mLastFuelLevel);
+        intent.putExtra("val_oil_level", mLastOilLevel);
+        intent.putExtra("val_fuel_instant", mLastInstantFuel);
+        intent.putExtra("val_fuel_avg", mLastAvgFuel);
+        intent.putExtra("val_temp_out", mLastTempOut);
+        intent.putExtra("val_temp_in", mLastTempIn);
+
         sendBroadcast(intent);
     }
 
@@ -597,17 +697,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                         }
 
                         // Broadcast status to UI
-                        Intent intent = new Intent("cn.oneostool.plus.ACTION_DAY_NIGHT_STATUS");
-                        intent.putExtra("mode", mLastThemeMode);
-                        // Include last known sensor values to keep UI in sync
-                        intent.putExtra("sensor_day_night", mLastDayNightSensorValue);
-                        intent.putExtra("sensor_light", mLastSpeedSensorValue);
-                        intent.putExtra("prop_avm", mLastAvmValue);
-                        intent.putExtra("prop_brightness_day", mLastBrightnessDayValue);
-                        intent.putExtra("prop_brightness_night", mLastBrightnessNightValue);
-                        intent.putExtra("prop_turn_left", mLastTurnSignalLeft);
-                        intent.putExtra("prop_turn_right", mLastTurnSignalRight);
-                        sendBroadcast(intent);
+                        broadcastSensorValues();
 
                         // Enforcement logic removed as per user request to replace "Force Auto" with
                         // "Theme Mode Settings"
@@ -628,7 +718,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         // 检测是否有通话，有通话时不处理媒体按键
         if (keyCode == 200087 || keyCode == 200088 || keyCode == 200085) {
-            SharedPreferences prefs = getSharedPreferences("navitool_prefs", Context.MODE_PRIVATE);
+            SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
             boolean isSteeringWheelEnabled = prefs.getBoolean("enable_steering_wheel", false);
             if (!isSteeringWheelEnabled) {
                 Log.d(TAG, "Steering wheel control disabled, skipping media key handling");
@@ -677,7 +767,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     }
 
     private void handleWechatShortPress() {
-        SharedPreferences prefs = getSharedPreferences("navitool_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
         boolean enabled = prefs.getBoolean("enable_wechat_func", false);
         if (!enabled) {
             Log.d(TAG, "WeChat button function disabled");
@@ -694,7 +784,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     }
 
     private void handleWechatLongPress() {
-        SharedPreferences prefs = getSharedPreferences("navitool_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
         boolean enabled = prefs.getBoolean("enable_wechat_func", false);
         if (!enabled) {
             Log.d(TAG, "WeChat button function disabled");
@@ -727,48 +817,252 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
         }
     }
 
+    // --- HUD Implementation ---
+
+    private void checkAndShowHud() {
+        if (mHudPresentation != null) {
+            return;
+        }
+
+        android.view.Display[] displays = mDisplayManager.getDisplays();
+        android.view.Display targetDisplay = null;
+
+        for (android.view.Display d : displays) {
+            if (d.getDisplayId() == 2) {
+                targetDisplay = d;
+                break;
+            }
+        }
+
+        if (targetDisplay == null) {
+            for (android.view.Display d : displays) {
+                if (d.getDisplayId() != android.view.Display.DEFAULT_DISPLAY) {
+                    targetDisplay = d;
+                    break;
+                }
+            }
+        }
+
+        if (targetDisplay != null) {
+            Log.i(TAG, "Attempting to show HUD on Display " + targetDisplay.getDisplayId());
+            Context hudContext = this;
+
+            // Context Wrapper for Overlay Type (Same logic as HudManager)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    Context displayContext = createDisplayContext(targetDisplay);
+                    hudContext = displayContext.createWindowContext(
+                            android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to create WindowContext", e);
+                }
+            }
+
+            mHudPresentation = new HudPresentation(hudContext, targetDisplay);
+            try {
+                mHudPresentation.show();
+                Log.i(TAG, "HUD Presentation Shown");
+                syncHudVisuals(new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(new java.util.Date()));
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to show HUD presentation", e);
+                mHudPresentation = null;
+            }
+        }
+    }
+
+    private void dismissHud() {
+        if (mHudPresentation != null) {
+            mHudPresentation.dismiss();
+            mHudPresentation = null;
+            Log.i(TAG, "HUD Presentation Dismissed");
+        }
+    }
+
+    private void syncHudVisuals(String timeString) {
+        if (mHudPresentation == null)
+            return;
+
+        SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
+
+        // --- Sync Visibility ---
+        boolean isTimeEnabled = prefs.getBoolean("time_widget_enabled", true);
+        boolean isImageEnabled = prefs.getBoolean("image_widget_enabled", true);
+        boolean isMediaCoverEnabled = prefs.getBoolean("media_cover_widget_enabled", true);
+        mHudPresentation.setTimeVisibility(isTimeEnabled);
+        mHudPresentation.setImageVisibility(isImageEnabled);
+        mHudPresentation.setMediaCoverVisibility(isMediaCoverEnabled);
+
+        // --- Sync Layout (Offline Mode Logic) ---
+        // --- Sync Layout (Offline Mode Logic) ---
+        float savedW = prefs.getFloat("saved_editor_width", 0);
+        float savedH = prefs.getFloat("saved_editor_height", 0);
+
+        // Wait, if savedH is missing (old prefs), we can approximate or just use width
+        // scaling
+        // For accurate text size, height scaling matches HudManager logic usually.
+        // HudManager.syncToHud calculates scaleFactor = 186 / h;
+        // So we should replicate that: scaleFactor = HUD_HEIGHT / savedH;
+
+        float scaleFactor = 1.0f;
+        if (savedH > 0) {
+            scaleFactor = (float) HudPresentation.HUD_HEIGHT / savedH;
+        } else if (savedW > 0) {
+            // Fallback to width scaling if height not saved yet (legacy support)
+            scaleFactor = (float) HudPresentation.HUD_WIDTH / savedW;
+        } else {
+            // Defaults
+            return;
+        }
+
+        // Time Widget
+        float txRatio = prefs.getFloat("time_x_ratio", 0);
+        float tyRatio = prefs.getFloat("time_y_ratio", 0);
+        // Ensure textSize is loaded correctly.
+        // Note: HudManager saves actual Paint text size (pixels).
+        // HudPresentation.syncTimeWidget applies * scaleFactor.
+        float textSize = prefs.getFloat("time_text_size", 40);
+
+        mHudPresentation.syncTimeWidget(txRatio, tyRatio, textSize, scaleFactor, timeString);
+
+        // Image Widget
+        float wxRatio = prefs.getFloat("white_x_ratio", 0);
+        float wyRatio = prefs.getFloat("white_y_ratio", 0);
+        int savedWhiteW = prefs.getInt("white_width", 100);
+
+        // Calculate W/H ratios based on saved editor dimensions
+        float wRatio = 0;
+        float hRatio = 0;
+
+        if (savedW > 0) {
+            wRatio = (float) savedWhiteW / savedW;
+        }
+
+        // For height ratio, we need to be careful.
+        // HudManager doesn't rigorously use ratio for image size, it sends W/H ratios
+        // In HudManager live sync:
+        // float wRatio = imageW / w;
+        // float hRatio = imageH / h;
+
+        int savedWhiteH = prefs.getInt("white_height", 100);
+        if (savedH > 0) {
+            hRatio = (float) savedWhiteH / savedH;
+        } else if (savedW > 0) {
+            // Approximate height if missing
+            float estimatedH = savedW * (186f / 728f);
+            hRatio = (float) savedWhiteH / estimatedH;
+        }
+
+        mHudPresentation.syncWhiteWidget(wxRatio, wyRatio, wRatio, hRatio);
+
+        // Media Cover Widget
+        if (prefs.contains("cover_x_ratio")) {
+            float cxRatio = prefs.getFloat("cover_x_ratio", 0);
+            float cyRatio = prefs.getFloat("cover_y_ratio", 0);
+            int savedCoverW = prefs.getInt("cover_width", 100);
+
+            float cwRatio = 0;
+            float chRatio = 0;
+            if (savedW > 0) {
+                cwRatio = (float) savedCoverW / savedW;
+            }
+
+            // Similar approximation for height
+            int savedCoverH = prefs.getInt("cover_height", 100);
+            if (savedH > 0) {
+                chRatio = (float) savedCoverH / savedH;
+            } else if (savedW > 0) {
+                float estimatedH = savedW * (186f / 728f);
+                chRatio = (float) savedCoverH / estimatedH;
+            }
+            mHudPresentation.syncMediaCoverWidget(cxRatio, cyRatio, cwRatio, chRatio);
+        }
+
+        // Gear Widget
+        boolean isGearEnabled = prefs.getBoolean("hud_gear_widget_enabled", true);
+        mHudPresentation.setGearVisibility(isGearEnabled);
+        if (isGearEnabled && prefs.contains("gear_x_ratio")) {
+            float gxRatio = prefs.getFloat("gear_x_ratio", 0);
+            float gyRatio = prefs.getFloat("gear_y_ratio", 0);
+            float gTextSize = prefs.getFloat("gear_text_size", 40);
+            String gearText = mCurrentGearString != null ? mCurrentGearString : "D";
+            mHudPresentation.syncGearWidget(gxRatio, gyRatio, gTextSize, scaleFactor, gearText);
+        }
+
+        // Update Content
+        updateHudMediaCoverContent();
+    }
+
+    private void updateHudMediaCoverContent() {
+        if (mHudPresentation == null)
+            return;
+        // Use mCurrentMediaData album cover if available
+        if (mCurrentMediaData != null && mCurrentMediaData.albumCover != null) {
+            mHudPresentation.updateMediaCover(mCurrentMediaData.albumCover);
+        } else {
+            // Try loading from file cache if metadata is null but file exists?
+            // Or just clear/placeholder.
+            // For now, check if we have an image file "album_art.png" in cache
+            java.io.File artFile = new java.io.File(getCacheDir(), "album_art.png");
+            if (artFile.exists()) {
+                android.graphics.Bitmap bm = android.graphics.BitmapFactory.decodeFile(artFile.getAbsolutePath());
+                if (bm != null) {
+                    mHudPresentation.updateMediaCover(bm);
+                    return;
+                }
+            }
+            mHudPresentation.updateMediaCover(null); // Show placeholder
+        }
+    }
+
     // --- Car AdaptAPI Implementation ---
 
     private void initCar() {
         try {
             if (iCarFunction == null || iSensor == null) {
-                ICar car = Car.create(getApplicationContext());
-                if (car != null) {
-                    iCarFunction = car.getICarFunction();
+                // Catch any linkage errors or exceptions during Car API creation
+                try {
+                    ICar car = Car.create(getApplicationContext());
+                    if (car != null) {
+                        iCarFunction = car.getICarFunction();
 
-                    if (car instanceof ISensor) {
-                        iSensor = (ISensor) car;
-                    }
-
-                    try {
-                        if (iSensor == null) {
-                            java.lang.reflect.Method method = car.getClass().getMethod("getSensorManager");
-                            iSensor = (ISensor) method.invoke(car);
+                        if (car instanceof ISensor) {
+                            iSensor = (ISensor) car;
                         }
-                    } catch (Exception ex) {
-                        Log.w(TAG, "getSensorManager not found via reflection");
-                    }
 
-                    Log.i(TAG, "Car AdaptAPI initialized successfully");
+                        try {
+                            if (iSensor == null) {
+                                java.lang.reflect.Method method = car.getClass().getMethod("getSensorManager");
+                                iSensor = (ISensor) method.invoke(car);
+                            }
+                        } catch (Exception ex) {
+                            Log.w(TAG, "getSensorManager not found via reflection");
+                        }
 
-                    // Start Brightness Polling (100ms)
-                    mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
-                    mBrightnessPollHandler.post(mBrightnessPollRunnable);
+                        Log.i(TAG, "Car AdaptAPI initialized successfully");
 
-                    if (iSensor != null) {
-                        registerSensorListeners();
-                        // Init Gear Manager with Sensor
-                        if (mGearManager != null) {
-                            mGearManager.init(iSensor, iCarFunction);
+                        // Start Brightness Polling (100ms)
+                        mBrightnessPollHandler.removeCallbacks(mBrightnessPollRunnable);
+                        mBrightnessPollHandler.post(mBrightnessPollRunnable);
+
+                        if (iSensor != null) {
+                            registerSensorListeners();
+                            // Init Gear Manager with Sensor
+                            if (mGearManager != null) {
+                                mGearManager.init(iSensor, iCarFunction);
+                            }
+                        }
+                        if (iCarFunction != null) {
+                            registerFunctionListeners();
                         }
                     }
-                    if (iCarFunction != null) {
-                        registerFunctionListeners();
-                    }
+                } catch (Throwable t) {
+                    Log.e(TAG, "Failed to initialize Car AdaptAPI: " + t.getMessage());
+                    t.printStackTrace();
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize Car AdaptAPI", e);
+            Log.e(TAG, "Error in initCar wrapper: " + e.getMessage());
         }
     }
 
@@ -778,41 +1072,121 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 ISensor.ISensorListener listener = new ISensor.ISensorListener() {
                     @Override
                     public void onSensorValueChanged(int sensorType, float value) {
+                        boolean changed = false;
                         if (sensorType == ISensor.SENSOR_TYPE_IGNITION_STATE) {
                             int val = (int) value;
                             Log.d(TAG, "Ignition State Changed (float): " + val);
                             if (val == ISensorEvent.IGNITION_STATE_DRIVING) {
                                 Log.i(TAG, "Ignition State: DRIVING");
                                 DebugLogger.toast(KeepAliveAccessibilityService.this, "检测到行车状态");
-                                AppLaunchManager.executeLaunch(KeepAliveAccessibilityService.this);
+                                Log.d(TAG, "Executing Auto Start. Current Foreground: " + mCurrentForegroundPkg);
+                                AppLaunchManager.executeLaunch(KeepAliveAccessibilityService.this,
+                                        mCurrentForegroundPkg);
+                                mLastIgnitionState = true;
+                                changed = true;
+                            } else {
+                                mLastIgnitionState = false;
+                                changed = true;
                             }
                         } else if (sensorType == SENSOR_TYPE_SPEED) {
                             Log.d(TAG, "Speed Sensor Changed (float): " + value);
                             // Speed value (x3.72 as requested by user)
                             float speedVal = value * 3.72f;
-                            broadcastSensorValues(mLastDayNightSensorValue, speedVal, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            mLastSpeedSensorValue = speedVal;
+
+                            broadcastSensorValues();
                             checkSmartAvmTrigger(speedVal);
+                        } else if (sensorType == ISensor.SENSOR_TYPE_FUEL_LEVEL) {
+                            mLastFuelLevel = value / 10.0f; // Assuming 1000 scale to %? Ref said value/1000. Let's
+                                                            // verify.
+                            // Ref: val fuelPercentage = value / 1000. s = String.format("%.1f",
+                            // fuelPercentage)
+                            mLastFuelLevel = value / 1000.0f;
+                            changed = true;
+                        } else if (sensorType == ISensor.SENSOR_TYPE_TEMPERATURE_AMBIENT) {
+                            mLastTempOut = value;
+                            changed = true;
+                        } else if (sensorType == ISensor.SENSOR_TYPE_TEMPERATURE_INDOOR) {
+                            mLastTempIn = value;
+                            changed = true;
+                        } else if (sensorType == SENSOR_INSTANT_FUEL_CONSUMPTION) {
+                            mLastInstantFuel = value;
+                            changed = true;
+                        } else if (sensorType == SENSOR_AVG_FUEL_CONSUMPTION_VALUE) {
+                            long now = System.currentTimeMillis();
+                            boolean isInvalid = (value == Float.MIN_VALUE || value == -1f);
+
+                            if (!isInvalid) {
+                                // Valid value: update cache and current
+                                mLastValidAvgFuel = value;
+                                mLastValidAvgFuelTime = now;
+                                mLastAvgFuel = value;
+                                changed = true;
+                            } else {
+                                // Invalid value: check 3s buffer
+                                if (mLastValidAvgFuel != -1f && (now - mLastValidAvgFuelTime < 3000)) {
+                                    // Within buffer time: ignore invalid value, keep showing old valid value
+                                } else {
+                                    // Buffer expired: show invalid value (will trigger -- in UI)
+                                    mLastAvgFuel = value;
+                                    changed = true;
+                                }
+                            }
+                        }
+
+                        if (changed) {
+                            broadcastSensorValues();
                         }
                     }
 
                     @Override
                     public void onSensorEventChanged(int sensorType, int value) {
+                        boolean changed = false;
                         if (sensorType == ISensor.SENSOR_TYPE_IGNITION_STATE) {
                             Log.d(TAG, "Ignition State Changed (int): " + value);
                             if (value == ISensorEvent.IGNITION_STATE_DRIVING) {
                                 Log.i(TAG, "Ignition State: DRIVING");
                                 DebugLogger.toast(KeepAliveAccessibilityService.this, "检测到行车状态");
-                                AppLaunchManager.executeLaunch(KeepAliveAccessibilityService.this);
+                                Log.d(TAG, "Executing Auto Start. Current Foreground: " + mCurrentForegroundPkg);
+                                AppLaunchManager.executeLaunch(KeepAliveAccessibilityService.this,
+                                        mCurrentForegroundPkg);
+                                mLastIgnitionState = true;
+                                changed = true;
+                            } else {
+                                mLastIgnitionState = false;
+                                changed = true;
                             }
                         } else if (sensorType == SENSOR_TYPE_SPEED) {
                             Log.d(TAG, "Speed Sensor Changed (int): " + value);
                             float speedVal = value * 3.72f;
-                            broadcastSensorValues(mLastDayNightSensorValue, speedVal, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            mLastSpeedSensorValue = speedVal;
+                            broadcastSensorValues();
                             checkSmartAvmTrigger(speedVal);
+                        } else if (sensorType == ISensor.SENSOR_TYPE_ENGINE_OIL_LEVEL) {
+                            // Map logic
+                            switch (value) {
+                                case ISensorEvent.ENGINE_OIL_LEVEL_HIGH:
+                                    mLastOilLevel = "偏高";
+                                    break;
+                                case ISensorEvent.ENGINE_OIL_LEVEL_LOW_1:
+                                    mLastOilLevel = "偏低L1";
+                                    break;
+                                case ISensorEvent.ENGINE_OIL_LEVEL_LOW_2:
+                                    mLastOilLevel = "偏低L2";
+                                    break;
+                                case ISensorEvent.ENGINE_OIL_LEVEL_OK:
+                                    mLastOilLevel = "正常";
+                                    break;
+                                default:
+                                    mLastOilLevel = "未知(" + value + ")";
+                                    break;
+                            }
+                            changed = true;
                         }
-                        // SENSOR_TYPE_DAY_NIGHT removed - using active polling instead
+
+                        if (changed) {
+                            broadcastSensorValues();
+                        }
                     }
 
                     @Override
@@ -823,14 +1197,18 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 // Register for Ignition
                 iSensor.registerListener(listener, ISensor.SENSOR_TYPE_IGNITION_STATE);
 
-                // Day/Night and Speed are polled actively now. Listener removed to avoid
-                // redundancy.
-                // iSensor.registerListener(listener, ISensor.SENSOR_TYPE_DAY_NIGHT);
-
                 // Register for Speed Sensor (0x100100)
                 iSensor.registerListener(listener, SENSOR_TYPE_SPEED);
 
-                Log.i(TAG, "Sensor listeners registered (Ignition, DayNight 0x100900, Speed 0x100100)");
+                // Register New Sensors
+                iSensor.registerListener(listener, ISensor.SENSOR_TYPE_FUEL_LEVEL);
+                iSensor.registerListener(listener, ISensor.SENSOR_TYPE_ENGINE_OIL_LEVEL);
+                iSensor.registerListener(listener, ISensor.SENSOR_TYPE_TEMPERATURE_AMBIENT);
+                iSensor.registerListener(listener, ISensor.SENSOR_TYPE_TEMPERATURE_INDOOR);
+                iSensor.registerListener(listener, SENSOR_INSTANT_FUEL_CONSUMPTION);
+                iSensor.registerListener(listener, SENSOR_AVG_FUEL_CONSUMPTION_VALUE);
+
+                Log.i(TAG, "Sensor listeners registered (Ignition, Speed, Fuel, Oil, Temp, etc.)");
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to register sensor listeners", e);
@@ -845,21 +1223,19 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                     public void onFunctionValueChanged(int functionId, int zone, int value) {
                         if (functionId == FUNC_AVM_STATUS) {
                             Log.d(TAG, "AVM Status Changed: " + value);
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue,
-                                    value, mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            mLastAvmValue = value;
+                            broadcastSensorValues();
                             // PollAndBroadcast is now handled by timed runnable
                             // Log.d(TAG, "Brightness Changed (Int): " + value + " for ID: " + functionId);
                         } else if (functionId == FUNC_TURN_SIGNAL_LEFT) {
                             Log.d(TAG, "Left Turn Signal Changed: " + value);
                             mLastTurnSignalLeft = value;
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            broadcastSensorValues();
                             checkSmartAvmTrigger(mLastSpeedSensorValue);
                         } else if (functionId == FUNC_TURN_SIGNAL_RIGHT) {
                             Log.d(TAG, "Right Turn Signal Changed: " + value);
                             mLastTurnSignalRight = value;
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            broadcastSensorValues();
                             checkSmartAvmTrigger(mLastSpeedSensorValue);
                         }
                     }
@@ -914,6 +1290,10 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
             } else if ("cn.oneostool.plus.ACTION_REQUEST_ONEOS_STATUS".equals(action)) {
                 boolean isConnected = (mOneOSServiceManager != null);
                 broadcastOneOSStatus(isConnected);
+            } else if ("cn.oneostool.plus.ACTION_REQUEST_GEAR_INFO".equals(action)) {
+                if (mGearManager != null) {
+                    mGearManager.broadcastCurrentState();
+                }
             } else if ("cn.oneostool.plus.ACTION_SET_THEME_MODE".equals(action)) {
                 if (iCarFunction != null) {
                     int modeValue = intent.getIntExtra("mode_value", VALUE_THEMEMODE_AUTO);
@@ -958,8 +1338,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                                 mLastBrightnessNightValue = value;
                             }
                             // Broadcast new state immediately to keep UI in sync
-                            broadcastSensorValues(mLastDayNightSensorValue, mLastSpeedSensorValue, mLastAvmValue,
-                                    mLastBrightnessDayValue, mLastBrightnessNightValue);
+                            broadcastSensorValues();
                         }
 
                         // Also force a check from system
@@ -1024,9 +1403,83 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                 if (event != null && event.getAction() == android.view.KeyEvent.ACTION_UP) {
                     Log.i(TAG, "Standard MEDIA_BUTTON received: " + event.getKeyCode());
                 }
+            } else if ("cn.oneostool.plus.ACTION_HUD_CONFIG_CHANGED".equals(action)) {
+                // Handle HUD Layout Update (Live or Saved)
+                updateHudFromIntent(intent);
+            } else if ("cn.oneostool.plus.ACTION_UPDATE_GEAR".equals(action)) {
+                String newGear = intent.getStringExtra("gear_value");
+                if (newGear != null) {
+                    mCurrentGearString = newGear;
+                    if (mHudPresentation != null) {
+                        mHudPresentation.updateGear(newGear);
+                    }
+                }
+            } else if ("cn.oneostool.plus.ACTION_HUD_VISIBILITY_CHANGED".equals(action)) {
+                // Trigger sync which reads visibility prefs
+                syncHudVisuals(new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(new java.util.Date()));
             }
         }
     };
+
+    // Optimized update method that uses Intent extras if available (for Live
+    // dragging),
+    // otherwise falls back to Prefs.
+    private void updateHudFromIntent(Intent intent) {
+        if (mHudPresentation == null)
+            return;
+
+        // 1. Time Widget
+        float txRatio = intent.getFloatExtra("time_x_ratio", -1);
+
+        if (txRatio != -1) {
+            // LIVE UPDATE: Use values from Intent
+            float tyRatio = intent.getFloatExtra("time_y_ratio", 0);
+            float textSize = intent.getFloatExtra("time_text_size", 40);
+
+            // Scale Factor - tricky, usually usually calc from HUD_WIDTH / EditorWidth.
+            // But in live mode, sender should pass it or we use default.
+            // Ideally HudManager sends pre-calculated ratios relative to HUD_WIDTH?
+            // No, HudManager sends ratios relative to Editor.
+            // We need 'scaleFactor'. HudManager can send it.
+            float scaleFactor = intent.getFloatExtra("scale_factor", 1.0f);
+
+            mHudPresentation.syncTimeWidget(txRatio, tyRatio, textSize, scaleFactor,
+                    new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                            .format(new java.util.Date()));
+
+            // Image Widget
+            if (intent.hasExtra("white_x_ratio")) {
+                float wxRatio = intent.getFloatExtra("white_x_ratio", 0);
+                float wyRatio = intent.getFloatExtra("white_y_ratio", 0);
+                float wRatio = intent.getFloatExtra("white_w_ratio", 0);
+                float hRatio = intent.getFloatExtra("white_h_ratio", 0);
+                mHudPresentation.syncWhiteWidget(wxRatio, wyRatio, wRatio, hRatio);
+            }
+
+            // Media Cover Widget
+            if (intent.hasExtra("cover_x_ratio")) {
+                float cxRatio = intent.getFloatExtra("cover_x_ratio", 0);
+                float cyRatio = intent.getFloatExtra("cover_y_ratio", 0);
+                float cwRatio = intent.getFloatExtra("cover_w_ratio", 0);
+                float chRatio = intent.getFloatExtra("cover_h_ratio", 0);
+                mHudPresentation.syncMediaCoverWidget(cxRatio, cyRatio, cwRatio, chRatio);
+            }
+
+            // Gear Widget
+            if (intent.hasExtra("gear_x_ratio")) {
+                float gxRatio = intent.getFloatExtra("gear_x_ratio", 0);
+                float gyRatio = intent.getFloatExtra("gear_y_ratio", 0);
+                float gTextSize = intent.getFloatExtra("gear_text_size", 40);
+                String gearText = mCurrentGearString != null ? mCurrentGearString : "D";
+                mHudPresentation.syncGearWidget(gxRatio, gyRatio, gTextSize, scaleFactor, gearText);
+            }
+        } else {
+            // FALLBACK: Read from Prefs (Saved State)
+            syncHudVisuals(new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                    .format(new java.util.Date()));
+        }
+    }
 
     private void checkAndEnforceBrightness() {
         if (!mIsOverrideEnabled || iCarFunction == null)
@@ -1093,7 +1546,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     }
 
     private void syncAutoNaviTheme() {
-        SharedPreferences prefs = getSharedPreferences("navitool_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
         if (!prefs.getBoolean("auto_theme_sync", true)) {
             Log.d(TAG, "Auto theme sync is disabled by user.");
             return;
@@ -1528,7 +1981,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
                             final String fArtist = data.artist;
                             final String fAlbum = data.albumName;
                             mOverrideHandler.post(() -> {
-                                SharedPreferences p = getSharedPreferences("navitool_prefs", MODE_PRIVATE);
+                                SharedPreferences p = getSharedPreferences("oneostool_prefs", MODE_PRIVATE);
                                 p.edit().putString("last_media_title", fTitle)
                                         .putString("last_media_artist", fArtist)
                                         .putString("last_media_album", fAlbum)
@@ -1636,6 +2089,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
     private long mLastPosition = 0;
     private int mLastPlaybackState = android.media.session.PlaybackState.STATE_NONE;
     private int mCurrentSource = -1; // Track the active audio source
+    private String mCurrentGearString = "D"; // Current Gear
     private boolean mIsDebouncingPause = false; // "Soft Pause" flag
 
     private void updateMediaSessionPosition(long position) {
@@ -1650,7 +2104,7 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
         // Persist position for cold start restoration
         mOverrideHandler.post(() -> {
-            getSharedPreferences("navitool_prefs", MODE_PRIVATE)
+            getSharedPreferences("oneostool_prefs", MODE_PRIVATE)
                     .edit()
                     .putLong("last_media_position", position)
                     .apply();
@@ -1873,6 +2327,9 @@ public class KeepAliveAccessibilityService extends AccessibilityService {
 
             Log.e("MEDIA_DEBUG", ">>> POSTING SYSTEM NOTIFICATION: Title=" + data.name);
             mNotificationManager.notify(NOTIFICATION_ID, builder.build());
+
+            // Update HUD Media Cover
+            updateHudMediaCoverContent();
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to update MediaSession", e);

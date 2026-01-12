@@ -22,6 +22,8 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import java.util.List;
 import java.util.ArrayList;
@@ -61,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private long mLastThemeUserActionTime = 0;
     private boolean mIsUpdatingThemeUI = false;
 
+    private HudManager mHudManager;
+
     private final ActivityResultLauncher<Intent> mStoragePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
                 checkPermissions();
@@ -78,6 +82,14 @@ public class MainActivity extends AppCompatActivity {
         initUI();
         checkPermissions();
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mHudManager != null) {
+            mHudManager.onDestroy();
+        }
     }
 
     @Override
@@ -110,9 +122,47 @@ public class MainActivity extends AppCompatActivity {
 
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_DAY_NIGHT_STATUS"));
         sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_ONEOS_STATUS"));
+        sendBroadcast(new Intent("cn.oneostool.plus.ACTION_REQUEST_GEAR_INFO"));
     }
 
     private void initUI() {
+        // Init Tabs
+        RadioGroup tabGroup = findViewById(R.id.tabGroup);
+        final View viewData = findViewById(R.id.viewDataValues);
+        final View viewFunction = findViewById(R.id.viewFunctionSwitches);
+        final View viewPermission = findViewById(R.id.viewPermissions);
+        final View viewHud = findViewById(R.id.viewHud);
+        final View viewAbout = findViewById(R.id.viewAbout);
+
+        tabGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            viewData.setVisibility(View.GONE);
+            viewFunction.setVisibility(View.GONE);
+            viewPermission.setVisibility(View.GONE);
+            viewHud.setVisibility(View.GONE);
+            viewAbout.setVisibility(View.GONE);
+
+            if (checkedId == R.id.tabData) {
+                viewData.setVisibility(View.VISIBLE);
+            } else if (checkedId == R.id.tabFunction) {
+                viewFunction.setVisibility(View.VISIBLE);
+            } else if (checkedId == R.id.tabPermission) {
+                viewPermission.setVisibility(View.VISIBLE);
+            } else if (checkedId == R.id.tabHud) {
+                viewHud.setVisibility(View.VISIBLE);
+            } else if (checkedId == R.id.tabAbout) {
+                viewAbout.setVisibility(View.VISIBLE);
+            }
+        });
+
+        mHudManager = new HudManager(this);
+
+        // Initialize Views (Existing Logic)
+        // Initialize Views (Existing Logic)
+        // Switches and Buttons are initialized below inline
+
+        // Ensure correct initial state
+        ((RadioButton) findViewById(R.id.tabData)).setChecked(true);
+
         // Setup Permission Status Items
         setupStatusItem(R.id.statusAutoStart, R.string.perm_auto_start, this::requestAutoStart);
         setupStatusItem(R.id.statusOverlay, R.string.perm_overlay, this::requestOverlayPermission);
@@ -158,14 +208,42 @@ public class MainActivity extends AppCompatActivity {
         if (tvGearValue != null)
             tvGearValue.setText(unknown);
 
+        TextView tvIgnitionState = findViewById(R.id.tvIgnitionState);
+        if (tvIgnitionState != null)
+            tvIgnitionState.setText(unknown);
+
+        TextView tvFuelLevel = findViewById(R.id.tvFuelLevel);
+        if (tvFuelLevel != null)
+            tvFuelLevel.setText(unknown);
+
+        TextView tvOilLevel = findViewById(R.id.tvOilLevel);
+        if (tvOilLevel != null)
+            tvOilLevel.setText(unknown);
+
+        TextView tvInstantFuel = findViewById(R.id.tvInstantFuel);
+        if (tvInstantFuel != null)
+            tvInstantFuel.setText(unknown);
+
+        TextView tvAvgFuel = findViewById(R.id.tvAvgFuel);
+        if (tvAvgFuel != null)
+            tvAvgFuel.setText(unknown);
+
+        TextView tvTempOut = findViewById(R.id.tvTempOut);
+        if (tvTempOut != null)
+            tvTempOut.setText(unknown);
+
+        TextView tvTempIn = findViewById(R.id.tvTempIn);
+        if (tvTempIn != null)
+            tvTempIn.setText(unknown);
+
         // Buttons
         LinearLayout layoutDebugButtons = findViewById(R.id.layoutDebugButtons);
         findViewById(R.id.btnForceLight).setOnClickListener(v -> sendAutoNaviBroadcast(1));
         findViewById(R.id.btnForceDark).setOnClickListener(v -> sendAutoNaviBroadcast(2));
 
-        android.content.SharedPreferences prefs = getSharedPreferences("navitool_prefs", Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = getSharedPreferences("oneostool_prefs", Context.MODE_PRIVATE);
 
-        // Auto Switch Toggle
+        // Auto Switch Toggle (High German/AutoNavi)
         SwitchMaterial switchAutoTheme = findViewById(R.id.switchAutoTheme);
         switchAutoTheme.setChecked(prefs.getBoolean("auto_theme_sync", true));
         switchAutoTheme.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -177,9 +255,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Vehicle Theme Mode Settings
+        // Vehicle Theme Mode Lock
+        SwitchMaterial switchThemeLock = findViewById(R.id.switchThemeLock);
         com.google.android.material.button.MaterialButtonToggleGroup toggleGroupThemeMode = findViewById(
                 R.id.toggleGroupThemeMode);
+
+        boolean isLockEnabled = prefs.getBoolean("theme_lock_enabled", false);
+        switchThemeLock.setChecked(isLockEnabled);
+        toggleGroupThemeMode.setVisibility(isLockEnabled ? View.VISIBLE : View.GONE);
+
+        switchThemeLock.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("theme_lock_enabled", isChecked).apply();
+            toggleGroupThemeMode.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
+        // Vehicle Theme Mode Settings
+        // (Existing toggleGroup logic continues...)
 
         // Restore saved selection
         int savedThemeIdx = prefs.getInt("vehicle_theme_mode_index", 0);
@@ -233,7 +324,7 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("mode_value", modeValue);
             sendBroadcast(intent);
 
-            DebugLogger.toast(this, getString(R.string.sent_autonavi_broadcast, modeValue));
+            DebugLogger.toast(MainActivity.this, getString(R.string.sent_autonavi_broadcast, modeValue));
         });
 
         // Smart AVM Toggle
@@ -316,6 +407,13 @@ public class MainActivity extends AppCompatActivity {
         tvOverrideAvm.setText(String.valueOf(savedAvm));
 
         // Initial update after layout
+        View.OnLayoutChangeListener layoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight,
+                oldBottom) -> {
+            updateProgress.run();
+        };
+        sbOverrideDay.addOnLayoutChangeListener(layoutListener);
+        sbOverrideNight.addOnLayoutChangeListener(layoutListener);
+        sbOverrideAvm.addOnLayoutChangeListener(layoutListener);
         sbOverrideDay.post(updateProgress);
 
         // Initial broadcast
@@ -408,8 +506,8 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinnerLongPressAction = findViewById(R.id.spinnerLongPressAction);
 
         String[] wechatActions = new String[] { "无操作", "启动应用" };
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, wechatActions);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_spinner_large, wechatActions);
+        adapter.setDropDownViewResource(R.layout.item_spinner_large);
 
         spinnerShortPressAction.setAdapter(adapter);
         spinnerLongPressAction.setAdapter(adapter);
@@ -423,8 +521,8 @@ public class MainActivity extends AppCompatActivity {
         apps.add(0, new AppLaunchManager.AppInfo("- - - -", ""));
 
         ArrayAdapter<AppLaunchManager.AppInfo> appAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, apps);
-        appAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                R.layout.item_spinner_large, apps);
+        appAdapter.setDropDownViewResource(R.layout.item_spinner_large);
 
         spinnerShortPressApp.setAdapter(appAdapter);
         spinnerLongPressApp.setAdapter(appAdapter);
@@ -494,10 +592,15 @@ public class MainActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         };
+        // ... existing codes ...
         spinnerShortPressAction.setOnItemSelectedListener(wechatListener);
         spinnerLongPressAction.setOnItemSelectedListener(wechatListener);
 
+        // Root Permission Fix
         // Initialize Media Buttons (Debug Only)
+
+        // Initialize Media Buttons (Debug Only)
+        // ... existing codes ...
         // Note: These buttons are invisible by default (gone in XML)
         View layoutMediaButtons = findViewById(R.id.layoutMediaButtons);
         findViewById(R.id.btnMediaPrev)
@@ -538,6 +641,11 @@ public class MainActivity extends AppCompatActivity {
             layoutDebugAvmButtons.setVisibility(isDebug ? View.VISIBLE : View.GONE);
         }
 
+        // Sync HUD Debug Status Visibility
+        if (mHudManager != null) {
+            mHudManager.updateDebugVisibility(isDebug);
+        }
+
         View layoutDebugLaunch = findViewById(R.id.layoutDebugLaunch);
         if (layoutDebugLaunch != null) {
             layoutDebugLaunch.setVisibility(isDebug ? View.VISIBLE : View.GONE);
@@ -548,7 +656,7 @@ public class MainActivity extends AppCompatActivity {
             if (AppLaunchManager.loadConfig(MainActivity.this).isEmpty()) {
                 DebugLogger.toast(MainActivity.this, "请先选择需要自动启动的应用");
             } else {
-                AppLaunchManager.executeLaunch(MainActivity.this);
+                AppLaunchManager.executeLaunch(MainActivity.this, getPackageName());
             }
         });
 
@@ -560,6 +668,11 @@ public class MainActivity extends AppCompatActivity {
             if (layoutDebugAvmButtons != null) {
                 layoutDebugAvmButtons.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             }
+
+            if (mHudManager != null) {
+                mHudManager.updateDebugVisibility(isChecked);
+            }
+
             // Debug Launch Button
             // Debug Launch Button
             if (layoutDebugLaunch != null) {
@@ -605,8 +718,57 @@ public class MainActivity extends AppCompatActivity {
                 int leftTurn = intent.getIntExtra("prop_turn_left", 0);
                 int rightTurn = intent.getIntExtra("prop_turn_right", 0);
 
+                // New Data
+                boolean ignition = intent.getBooleanExtra("val_ignition", false);
+                float fuelLevel = intent.getFloatExtra("val_fuel_level", -1f);
+                String oilLevel = intent.getStringExtra("val_oil_level");
+                float instantFuel = intent.getFloatExtra("val_fuel_instant", -1f);
+                float avgFuel = intent.getFloatExtra("val_fuel_avg", -1f);
+                float tempOut = intent.getFloatExtra("val_temp_out", -999f);
+                float tempIn = intent.getFloatExtra("val_temp_in", -999f);
+
+                // Theme Lock Enforcement
+                SwitchMaterial switchThemeLock = findViewById(R.id.switchThemeLock);
+                if (switchThemeLock != null && switchThemeLock.isChecked()) {
+                    android.content.SharedPreferences prefs = getSharedPreferences("oneostool_prefs",
+                            Context.MODE_PRIVATE);
+                    int savedThemeIdx = prefs.getInt("vehicle_theme_mode_index", 0);
+                    int targetMode = 0; // 0 for Auto in Receiver context? No, wait.
+
+                    // Note: The mode received here (0-3 usually?) might be different from 0x2015
+                    // targets.
+                    // But we must assume 'mode' matches the index convention or logic.
+                    // Wait, previous code:
+                    // case 0: checkedId = R.id.btnThemeAuto;
+                    // ...
+                    // If 'mode' in broadcast is consistent with what we display in
+                    // updateSensorStatus,
+                    // we can compare.
+                    // But let's assume we just blast the broadcast if it doesn't match?
+                    // Actually, to avoid loops, we should only send if truly different.
+                    // However, without knowing the exact mapping of 'mode' here (it comes from
+                    // ID_DAY_NIGHT_THEME which is 0x2015xxxx),
+                    // wait, ID_DAY_NIGHT_THEME *value* is 0x201501xx.
+                    // So 'mode' is likely 0x201501xx.
+
+                    int expectedValue = 0x20150103; // Auto
+                    if (savedThemeIdx == 1)
+                        expectedValue = 0x20150105; // Sunset
+                    else if (savedThemeIdx == 2)
+                        expectedValue = 0x20150101; // Day
+                    else if (savedThemeIdx == 3)
+                        expectedValue = 0x20150102; // Night
+
+                    if (mode != 0 && mode != expectedValue) {
+                        // Force update
+                        Intent forceIntent = new Intent("cn.oneostool.plus.ACTION_SET_THEME_MODE");
+                        forceIntent.putExtra("mode_value", expectedValue);
+                        sendBroadcast(forceIntent);
+                    }
+                }
+
                 updateSensorStatus(mode, dayNightSensor, lightSensor, avmProp, brightnessDay, brightnessNight, leftTurn,
-                        rightTurn);
+                        rightTurn, ignition, fuelLevel, oilLevel, instantFuel, avgFuel, tempOut, tempIn);
             }
         }
     };
@@ -706,7 +868,7 @@ public class MainActivity extends AppCompatActivity {
                 int rpm = intent.getIntExtra(GearCalculationManager.EXTRA_RPM, 0);
                 TextView tvRpm = findViewById(R.id.tvRpmValue);
                 if (tvRpm != null) {
-                    tvRpm.setText(String.valueOf(rpm));
+                    tvRpm.setText(rpm + " rpm");
                 }
             } else if (GearCalculationManager.ACTION_UPDATE_GEAR.equals(action)) {
                 String gear = intent.getStringExtra(GearCalculationManager.EXTRA_GEAR);
@@ -802,7 +964,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateSensorStatus(int dayNightThemeMode, int dayNightSensor, float lightSensor, int avmProp,
-            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn) {
+            int brightnessDay, int brightnessNight, int leftTurn, int rightTurn,
+            boolean ignition, float fuelLevel, String oilLevel, float instantFuel, float avgFuel, float tempOut,
+            float tempIn) {
         TextView tvPropDayNightTheme = findViewById(R.id.tvPropDayNightTheme);
         TextView tvSensorDayNight = findViewById(R.id.tvSensorDayNight);
         TextView tvSensorSpeed = findViewById(R.id.tvSensorSpeed);
@@ -811,27 +975,58 @@ public class MainActivity extends AppCompatActivity {
         TextView tvPropBrightnessDay = findViewById(R.id.tvPropBrightnessDay);
         TextView tvPropBrightnessNight = findViewById(R.id.tvPropBrightnessNight);
 
+        // New TextViews
+        TextView tvIgnitionState = findViewById(R.id.tvIgnitionState);
+        TextView tvFuelLevel = findViewById(R.id.tvFuelLevel);
+        TextView tvOilLevel = findViewById(R.id.tvOilLevel);
+        TextView tvInstantFuel = findViewById(R.id.tvInstantFuel);
+        TextView tvAvgFuel = findViewById(R.id.tvAvgFuel);
+        TextView tvTempOut = findViewById(R.id.tvTempOut);
+        TextView tvTempIn = findViewById(R.id.tvTempIn);
+
+        // Update New Values
+        if (tvIgnitionState != null)
+            tvIgnitionState.setText(ignition ? "行驶中" : "熄火/停车");
+        if (tvFuelLevel != null && fuelLevel != -1f)
+            tvFuelLevel.setText(String.format("%.1f %%", fuelLevel));
+        if (tvOilLevel != null && oilLevel != null)
+            tvOilLevel.setText(oilLevel);
+        if (tvInstantFuel != null) {
+            if (instantFuel == Float.MIN_VALUE) {
+                tvInstantFuel.setText("--");
+            } else if (instantFuel != -1f) {
+                tvInstantFuel.setText(String.format("%.1f L/100km", instantFuel));
+            }
+        }
+        if (tvAvgFuel != null) {
+            if (avgFuel == Float.MIN_VALUE) {
+                tvAvgFuel.setText("--");
+            } else if (avgFuel != -1f) {
+                tvAvgFuel.setText(String.format("%.1f L/100km", avgFuel));
+            }
+        }
+        if (tvTempOut != null && tempOut != -999f)
+            tvTempOut.setText(String.format("%.1f °C", tempOut));
+        if (tvTempIn != null && tempIn != -999f)
+            tvTempIn.setText(String.format("%.1f °C", tempIn));
+
         if (tvPropDayNightTheme != null) {
             String modeStr;
             switch (dayNightThemeMode) {
                 case 0x20150103: // DAYMODE_SETTING_AUTO
                     modeStr = getString(R.string.mode_auto);
-                    syncThemeUI(R.id.btnThemeAuto);
                     break;
                 case 0x20150101: // DAYMODE_SETTING_DAY
                     modeStr = getString(R.string.mode_day);
-                    syncThemeUI(R.id.btnThemeDay);
                     break;
                 case 0x20150102: // DAYMODE_SETTING_NIGHT
                     modeStr = getString(R.string.mode_night);
-                    syncThemeUI(R.id.btnThemeNight);
                     break;
                 case 0x20150104: // VALUE_DAYMODE_CUSTOM
                     modeStr = getString(R.string.mode_custom);
                     break;
                 case 0x20150105: // VALUE_DAYMODE_SUNRISE_AND_SUNSET
                     modeStr = getString(R.string.mode_sunrise_sunset);
-                    syncThemeUI(R.id.btnThemeSunset);
                     break;
                 default:
                     modeStr = getString(R.string.mode_unknown);
@@ -856,7 +1051,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (tvSensorSpeed != null) {
             String valStr = (lightSensor == -1f) ? getString(R.string.mode_unknown)
-                    : String.format(Locale.getDefault(), "%.2f", lightSensor);
+                    : String.format(Locale.getDefault(), "%.0f km/h", lightSensor);
             tvSensorSpeed.setText(valStr);
         }
 
@@ -1101,7 +1296,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupAutoStartApps() {
-        SwitchMaterial switchAutoStart = findViewById(R.id.switchAutoStartApps);
+        SwitchMaterial switchAutoStart = findViewById(R.id.switchAutoStart);
         SwitchMaterial switchReturnToHome = findViewById(R.id.switchReturnToHome);
         ImageButton btnAddApp = findViewById(R.id.btnAddApp);
         LinearLayout llAutoStartAppsList = findViewById(R.id.llAutoStartAppsList);
@@ -1191,8 +1386,8 @@ public class MainActivity extends AppCompatActivity {
             displayNames.add(app.name);
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, displayNames);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_spinner_large, displayNames);
+        adapter.setDropDownViewResource(R.layout.item_spinner_large);
         spinner.setAdapter(adapter);
 
         if (initialConfig != null) {

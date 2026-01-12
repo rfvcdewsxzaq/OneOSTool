@@ -22,4 +22,7 @@
     <color name="color_text_unselected">#666666</color>
     <color name="color_tab_selected_bg">@color/cyan_500</color>
     <color name="color_seekbar_track">#E0E0E0</color>
+
+    <!-- HUD Editor Background (Day: 60% Black for contrast with White text) -->
+    <color name="color_hud_editor_bg">#99000000</color>
 </resources>

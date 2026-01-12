@@ -15,7 +15,7 @@ import java.util.Locale;
 
 public class DebugLogger {
 
-    private static final String PREF_NAME = "navitool_prefs";
+    private static final String PREF_NAME = "oneostool_prefs";
     private static final String KEY_DEBUG_MODE = "debug_mode";
     private static final String LOG_FILE_NAME = "navitool.debug.txt";
     private static final long LOG_COOLDOWN_MS = 60000; // 60 seconds cooldown

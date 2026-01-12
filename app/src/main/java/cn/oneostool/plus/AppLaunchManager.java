@@ -19,7 +19,7 @@ import java.util.List;
 
 public class AppLaunchManager {
     private static final String TAG = "AppLaunchManager";
-    private static final String PREFS_NAME = "navitool_prefs";
+    private static final String PREFS_NAME = "oneostool_prefs";
     private static final String KEY_APP_CONFIG = "app_launch_config";
     private static final String KEY_AUTO_START_APPS_ENABLED = "auto_start_apps_enabled";
     private static final String KEY_RETURN_TO_HOME = "return_to_home_after_launch";
@@ -126,7 +126,7 @@ public class AppLaunchManager {
         return getInstalledApps(context, false);
     }
 
-    public static void executeLaunch(Context context) {
+    public static void executeLaunch(Context context, String restorePackageName) {
         if (!isAutoStartEnabled(context)) {
             Log.d(TAG, "Auto start apps disabled.");
             return;
@@ -137,6 +137,11 @@ public class AppLaunchManager {
         boolean returnToHome = isReturnToHomeEnabled(context);
 
         long cumulativeDelay = 0;
+
+        if (configs.isEmpty()) {
+            Log.d(TAG, "No apps configured for auto-start.");
+            return;
+        }
 
         for (AppConfig config : configs) {
             if (config.packageName == null || config.packageName.isEmpty())
@@ -159,6 +164,28 @@ public class AppLaunchManager {
                         DebugLogger.toast(context,
                                 String.format(context.getString(R.string.launching_app), config.packageName));
                         Log.d(TAG, "Launched " + config.packageName);
+
+                        // RESTORE LOGIC: Attempt to restore previous app after 1 second
+                        handler.postDelayed(() -> {
+                            if (restorePackageName != null && !restorePackageName.isEmpty()) {
+                                try {
+                                    Intent restoreIntent = pm.getLaunchIntentForPackage(restorePackageName);
+                                    if (restoreIntent != null) {
+                                        restoreIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        restoreIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // Important
+                                        context.startActivity(restoreIntent);
+                                        Log.d(TAG, "Restored previous app: " + restorePackageName);
+                                    } else {
+                                        Log.w(TAG, "Restore intent not found for: " + restorePackageName);
+                                    }
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Failed to restore app: " + restorePackageName, e);
+                                }
+                            } else {
+                                Log.d(TAG, "No valid restore package, staying on current app.");
+                            }
+                        }, 1000);
+
                     } else {
                         Log.e(TAG, "Could not find launch intent for " + config.packageName);
                     }
@@ -169,13 +196,14 @@ public class AppLaunchManager {
         }
 
         // Return to home screen after all launches complete (plus 3 seconds buffer)
+        // This acts as a final fallback/cleanup if enabled
         if (returnToHome) {
             handler.postDelayed(() -> {
                 Intent homeIntent = new Intent(Intent.ACTION_MAIN);
                 homeIntent.addCategory(Intent.CATEGORY_HOME);
                 homeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(homeIntent);
-                Log.d(TAG, "Returned to home screen");
+                Log.d(TAG, "Returned to home screen (Final Step)");
             }, cumulativeDelay + 3000L);
         }
     }

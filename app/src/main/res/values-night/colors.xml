@@ -8,4 +8,7 @@
     <color name="color_text_unselected">#CCCCCC</color>
     <color name="color_tab_selected_bg">@color/cyan_700</color>
     <color name="color_seekbar_track">#616161</color>
+
+    <!-- HUD Editor Background (Night: 60% Black for consistency) -->
+    <color name="color_hud_editor_bg">#99000000</color>
 </resources>

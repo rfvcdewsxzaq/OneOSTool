@@ -303,6 +303,13 @@ public class GearCalculationManager implements ISensor.ISensorListener, ICarFunc
             return mCurrentSensorGear + bestGear;
         }
 
+        // If calculation fails (e.g. torque converter slip), hold previous known gear
+        // if it matches the current mode (D or M).
+        if (mLastValidGear != null && mLastValidGear.startsWith(mCurrentSensorGear)
+                && !mLastValidGear.equals(mCurrentSensorGear)) {
+            return mLastValidGear;
+        }
+
         return mCurrentSensorGear;
     }
 
@@ -356,5 +363,11 @@ public class GearCalculationManager implements ISensor.ISensorListener, ICarFunc
         Intent intent = new Intent(ACTION_UPDATE_DRIVE_MODE);
         intent.putExtra(EXTRA_DRIVE_MODE, mode);
         mContext.sendBroadcast(intent);
+    }
+
+    public void broadcastCurrentState() {
+        broadcastRpm((int) mLastRpm);
+        broadcastGear(smoothGearOutput(mCurrentSensorGear)); // Use last valid/current
+        broadcastDriveMode(mCurrentDriveMode);
     }
 }

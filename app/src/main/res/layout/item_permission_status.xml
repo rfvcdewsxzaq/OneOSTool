@@ -25,7 +25,8 @@
         android:layout_weight="1"
         android:layout_marginStart="16dp"
         android:text="Permission Name"
-        android:textSize="15sp"
+        android:textSize="24sp"
+        android:textStyle="bold"
         android:textColor="?android:attr/textColorPrimary"/>
 
     <Button
